@@ -106,6 +106,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/devices/stats', isAuthenticated, hasRegionalAccess, async (req: any, res) => {
+    try {
+      const user = req.user as User;
+      let devices = await storage.getAllDevices();
+      
+      // Apply regional restrictions for NEC_ENGINEER
+      if (user.role === 'NEC_ENGINEER' && user.region) {
+        devices = devices.filter(d => d.region === user.region);
+      }
+      
+      const stats = {
+        total: devices.length,
+        online: devices.filter(d => d.status === 'LIVE').length,
+        offline: devices.filter(d => d.status === 'SHUTDOWN').length,
+        maintenance: devices.filter(d => d.status === 'MAINTENANCE').length,
+        avgUptime: devices.length > 0 ? devices.reduce((acc, d) => acc + (d.uptime || 0), 0) / devices.length : 0
+      };
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching device stats:", error);
+      res.status(500).json({ message: "Failed to fetch device stats" });
+    }
+  });
+
   app.get('/api/devices/:id', isAuthenticated, async (req: any, res) => {
     try {
       const deviceData = await deviceService.getDeviceWithMetrics(req.params.id);
@@ -187,30 +211,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching activity stats:", error);
       res.status(500).json({ message: "Failed to fetch activity statistics" });
-    }
-  });
-
-  app.get('/api/devices/stats', isAuthenticated, hasRegionalAccess, async (req: any, res) => {
-    try {
-      const user = req.user as User;
-      let devices = await storage.getAllDevices();
-      
-      // Apply regional restrictions for NEC_ENGINEER
-      if (user.role === 'NEC_ENGINEER' && user.region) {
-        devices = devices.filter(d => d.region === user.region);
-      }
-      
-      const stats = {
-        total: devices.length,
-        online: devices.filter(d => d.status === 'LIVE').length,
-        offline: devices.filter(d => d.status === 'SHUTDOWN').length,
-        maintenance: devices.filter(d => d.status === 'MAINTENANCE').length,
-        avgUptime: devices.length > 0 ? devices.reduce((acc, d) => acc + (d.uptime || 0), 0) / devices.length : 0
-      };
-      res.json(stats);
-    } catch (error) {
-      console.error("Error fetching device stats:", error);
-      res.status(500).json({ message: "Failed to fetch device stats" });
     }
   });
 

@@ -27,42 +27,50 @@ export default function Sidebar({ isOpen, onClose, isMobile, activeTab, onTabCha
     if (user?.role === 'NEC_GENERAL') {
       return {
         'overview': 'overview',
+        'data': 'data',
+        'project-analytics': 'project-analytics',
+        'performance': 'performance',
         'alerts': 'alerts',
         'analytics': 'analytics',
         'reports': 'reports',
-        'ai-assistant': 'operations', // AI Assistant is in Operations tab
-        'user-management': 'operations', // User Management is in Operations tab  
-        'settings': 'operations' // Settings is in Operations tab
+        'ai-assistant': 'operations',
+        'user-management': 'operations',
+        'activity': 'activity',
+        'settings': 'operations'
       };
     } else if (user?.role === 'NEC_ENGINEER') {
       return {
-        'overview': 'monitoring',
-        'alerts': 'monitoring', 
+        'overview': 'overview',
+        'data': 'data',
+        'alerts': 'alerts', 
         'analytics': 'analytics',
         'reports': 'reports',
-        'ai-assistant': 'maintenance',
-        'user-management': 'monitoring',
-        'settings': 'monitoring'
+        'ai-assistant': 'operations',
+        'user-management': 'operations',
+        'settings': 'operations'
       };
     } else if (user?.role === 'NEC_ADMIN') {
       return {
-        'overview': 'devices',
-        'alerts': 'devices',
+        'overview': 'overview',
+        'data': 'data',
+        'alerts': 'alerts',
         'analytics': 'analytics',
-        'reports': 'logs',
-        'ai-assistant': 'devices',
-        'user-management': 'users',
-        'settings': 'configuration'
+        'reports': 'reports',
+        'ai-assistant': 'operations',
+        'user-management': 'operations',
+        'activity': 'activity',
+        'settings': 'operations'
       };
     } else { // CLIENT
       return {
         'overview': 'overview',
-        'alerts': 'overview',
+        'data': 'data',
+        'alerts': 'alerts',
         'analytics': 'analytics',
         'reports': 'reports',
-        'ai-assistant': 'overview',
+        'ai-assistant': 'operations',
         'user-management': 'overview',
-        'settings': 'service'
+        'settings': 'overview'
       };
     }
   };
@@ -122,6 +130,22 @@ export default function Sidebar({ isOpen, onClose, isMobile, activeTab, onTabCha
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5v6l3-3 3 3V5" />
               </svg>
               <span>Dashboard</span>
+            </button>
+
+            <button 
+              className={`flex items-center space-x-3 rounded-lg px-3 py-2 font-medium w-full text-left transition-colors ${
+                isSidebarItemActive('data') 
+                  ? 'text-foreground bg-primary/10' 
+                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+              }`}
+              onClick={handleLinkClick('data')}
+              data-testid="link-data-view"
+            >
+              <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2H3z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 9h6m-6 3h6m-6 3h6" />
+              </svg>
+              <span>Data View</span>
             </button>
             
             <button 

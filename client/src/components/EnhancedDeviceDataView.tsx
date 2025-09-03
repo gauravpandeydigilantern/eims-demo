@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import AdvancedFilterPanel, { FilterOptions } from "./AdvancedFilterPanel";
+import SimpleFilterPanel, { FilterOptions } from "./SimpleFilterPanel";
 import { format } from "date-fns";
 import { Eye, Download, RefreshCw } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -71,7 +71,7 @@ export default function EnhancedDeviceDataView() {
 
   const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
 
-  const { data: devices, isLoading, refetch } = useQuery<Device[]>({
+  const { data: devices, isLoading, refetch, error } = useQuery<Device[]>({
     queryKey: ["/api/devices"],
     refetchInterval: 30 * 1000,
   });
@@ -216,9 +216,27 @@ export default function EnhancedDeviceDataView() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <p className="text-destructive mb-4">Failed to load device data</p>
+              <Button onClick={() => refetch()}>
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Retry
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      <AdvancedFilterPanel
+      <SimpleFilterPanel
         onFiltersChange={setFilters}
         availableRegions={availableRegions}
         availableVendors={availableVendors}
@@ -276,7 +294,13 @@ export default function EnhancedDeviceDataView() {
                       <TableCell>{device.region}</TableCell>
                       <TableCell>{device.vendor}</TableCell>
                       <TableCell className="text-sm">
-                        {device.lastSeen ? format(new Date(device.lastSeen), "MMM dd, HH:mm") : "Never"}
+                        {device.lastSeen ? (() => {
+                          try {
+                            return format(new Date(device.lastSeen), "MMM dd, HH:mm");
+                          } catch (error) {
+                            return device.lastSeen.substring(0, 16).replace('T', ' ');
+                          }
+                        })() : "Never"}
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">
@@ -380,19 +404,43 @@ export default function EnhancedDeviceDataView() {
                                     <div className="space-y-2 mt-2">
                                       <div className="flex justify-between">
                                         <span className="text-sm">Last Seen:</span>
-                                        <span className="text-sm">{selectedDevice.lastSeen ? format(new Date(selectedDevice.lastSeen), "MMM dd, yyyy HH:mm") : "Never"}</span>
+                                        <span className="text-sm">{selectedDevice.lastSeen ? (() => {
+                                          try {
+                                            return format(new Date(selectedDevice.lastSeen), "MMM dd, yyyy HH:mm");
+                                          } catch (error) {
+                                            return selectedDevice.lastSeen.substring(0, 16).replace('T', ' ');
+                                          }
+                                        })() : "Never"}</span>
                                       </div>
                                       <div className="flex justify-between">
                                         <span className="text-sm">Last Transaction:</span>
-                                        <span className="text-sm">{selectedDevice.lastTransaction ? format(new Date(selectedDevice.lastTransaction), "MMM dd, yyyy HH:mm") : "Never"}</span>
+                                        <span className="text-sm">{selectedDevice.lastTransaction ? (() => {
+                                          try {
+                                            return format(new Date(selectedDevice.lastTransaction), "MMM dd, yyyy HH:mm");
+                                          } catch (error) {
+                                            return selectedDevice.lastTransaction.substring(0, 16).replace('T', ' ');
+                                          }
+                                        })() : "Never"}</span>
                                       </div>
                                       <div className="flex justify-between">
                                         <span className="text-sm">Last Tag Read:</span>
-                                        <span className="text-sm">{selectedDevice.lastTagRead ? format(new Date(selectedDevice.lastTagRead), "MMM dd, yyyy HH:mm") : "Never"}</span>
+                                        <span className="text-sm">{selectedDevice.lastTagRead ? (() => {
+                                          try {
+                                            return format(new Date(selectedDevice.lastTagRead), "MMM dd, yyyy HH:mm");
+                                          } catch (error) {
+                                            return selectedDevice.lastTagRead.substring(0, 16).replace('T', ' ');
+                                          }
+                                        })() : "Never"}</span>
                                       </div>
                                       <div className="flex justify-between">
                                         <span className="text-sm">Install Date:</span>
-                                        <span className="text-sm">{selectedDevice.installDate ? format(new Date(selectedDevice.installDate), "MMM dd, yyyy") : "Unknown"}</span>
+                                        <span className="text-sm">{selectedDevice.installDate ? (() => {
+                                          try {
+                                            return format(new Date(selectedDevice.installDate), "MMM dd, yyyy");
+                                          } catch (error) {
+                                            return selectedDevice.installDate.substring(0, 10);
+                                          }
+                                        })() : "Unknown"}</span>
                                       </div>
                                     </div>
                                   </div>
