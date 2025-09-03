@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { seedDemoUsers } from "./seedUsers";
+import { deviceMonitoringService } from "./services/deviceMonitoringService";
 
 const app = express();
 app.use(express.json());
@@ -71,5 +72,8 @@ app.use((req, res, next) => {
     reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
+    
+    // Start device monitoring service
+    deviceMonitoringService.start();
   });
 })();

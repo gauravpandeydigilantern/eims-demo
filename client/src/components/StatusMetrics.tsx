@@ -2,17 +2,17 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 
 export default function StatusMetrics() {
-  const { data: statusSummary, isLoading } = useQuery({
+  const { data: statusSummary, isLoading } = useQuery<Array<{status: string; count: number}>>({
     queryKey: ["/api/analytics/status-summary"],
     refetchInterval: 30 * 1000,
   });
 
-  const { data: devices } = useQuery({
+  const { data: devices } = useQuery<Array<any>>({
     queryKey: ["/api/devices"],
     refetchInterval: 30 * 1000,
   });
 
-  const { data: alertsSummary } = useQuery({
+  const { data: alertsSummary } = useQuery<{total: number; critical: number; warning: number; info: number}>({
     queryKey: ["/api/alerts/summary"],
     refetchInterval: 30 * 1000,
   });
@@ -32,8 +32,9 @@ export default function StatusMetrics() {
   }
 
   const totalDevices = devices?.length || 0;
-  const onlineDevices = statusSummary?.find(s => s.status === 'LIVE')?.count || 0;
+  const liveDevices = statusSummary?.find(s => s.status === 'LIVE')?.count || 0;
   const downDevices = statusSummary?.find(s => s.status === 'DOWN')?.count || 0;
+  const shutdownDevices = statusSummary?.find(s => s.status === 'SHUTDOWN')?.count || 0;
   const maintenanceDevices = statusSummary?.find(s => s.status === 'MAINTENANCE')?.count || 0;
 
   const metrics = [
@@ -49,9 +50,9 @@ export default function StatusMetrics() {
       ),
     },
     {
-      title: "Devices Online",
-      value: onlineDevices.toLocaleString(),
-      change: `${totalDevices ? Math.round((onlineDevices / totalDevices) * 100) : 0}% uptime`,
+      title: "Devices Live",
+      value: liveDevices.toLocaleString(),
+      change: `${totalDevices ? Math.round((liveDevices / totalDevices) * 100) : 0}% uptime`,
       changeType: "positive",
       icon: (
         <svg className="w-6 h-6 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -74,7 +75,7 @@ export default function StatusMetrics() {
       title: "Active Alerts",
       value: alertsSummary?.total?.toLocaleString() || "0",
       change: `${alertsSummary?.critical || 0} critical alerts`,
-      changeType: alertsSummary?.critical > 0 ? "negative" : "neutral",
+      changeType: (alertsSummary?.critical || 0) > 0 ? "negative" : "neutral",
       icon: (
         <svg className="w-6 h-6 text-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />

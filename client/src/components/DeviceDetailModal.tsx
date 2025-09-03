@@ -28,7 +28,7 @@ export default function DeviceDetailModal({ deviceId, onClose }: DeviceDetailMod
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: deviceData, isLoading } = useQuery({
+  const { data: deviceData, isLoading } = useQuery<{device: any; metrics: any; recentAlerts: any[]}>({
     queryKey: ["/api/devices", deviceId],
     enabled: !!deviceId,
   });
