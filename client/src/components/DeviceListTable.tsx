@@ -20,12 +20,12 @@ export default function DeviceListTable({ onDeviceSelect }: DeviceListTableProps
   const [, setLocation] = useLocation();
 
   const { user } = useAuth();
-  const { data: devices, isLoading } = useQuery({
+  const { data: devices, isLoading } = useQuery<any[]>({
     queryKey: ["/api/devices"],
     refetchInterval: 30 * 1000,
   });
 
-  const filteredDevices = devices?.filter((device: any) => {
+  const filteredDevices = (devices || []).filter((device: any) => {
     const matchesSearch = device.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          device.tollPlaza.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          device.region.toLowerCase().includes(searchTerm.toLowerCase());

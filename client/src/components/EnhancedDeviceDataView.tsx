@@ -86,8 +86,8 @@ export default function EnhancedDeviceDataView() {
     if (!devices) return { availableRegions: [], availableVendors: [] };
     
     return {
-      availableRegions: [...new Set(devices.map(d => d.region))].sort(),
-      availableVendors: [...new Set(devices.map(d => d.vendor))].sort()
+      availableRegions: Array.from(new Set(devices.map(d => d.region))).sort(),
+      availableVendors: Array.from(new Set(devices.map(d => d.vendor))).sort()
     };
   }, [devices]);
 
