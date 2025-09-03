@@ -15,10 +15,18 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Shield, MapPin, Users, Settings, Eye, Monitor, AlertTriangle, BarChart3, Activity, TrendingUp, Database, Zap, Cpu, Thermometer, Wifi, Battery, Globe } from "lucide-react";
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area } from "recharts";
+import { Shield, MapPin, Users, Settings, Eye, Monitor, AlertTriangle, BarChart3, Activity, TrendingUp, Database, Zap, Cpu, Thermometer, Wifi, Battery, Globe, Download, FileText, Table, Calendar, Filter, Search } from "lucide-react";
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area, ComposedChart } from "recharts";
 import { apiRequest } from "@/lib/queryClient";
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import { CSVLink } from 'react-csv';
 
 interface DashboardLayoutProps {
   title: string;
@@ -568,26 +576,373 @@ function NECGeneralDashboard() {
 
               {/* Reports Tab */}
               <TabsContent value="reports" className="space-y-6">
+                {/* Report Controls */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>Monthly Performance Report</CardTitle>
-                    <CardDescription>Comprehensive system metrics and trends</CardDescription>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="w-5 h-5" />
+                      Advanced Reporting & Analytics
+                    </CardTitle>
+                    <CardDescription>Generate comprehensive reports with advanced filtering and export capabilities</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <ResponsiveContainer width="100%" height={400}>
-                      <LineChart data={performanceData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" />
-                        <YAxis />
-                        <Tooltip />
-                        <Legend />
-                        <Line type="monotone" dataKey="devices" stroke="#8884d8" strokeWidth={3} name="Active Devices" />
-                        <Line type="monotone" dataKey="uptime" stroke="#82ca9d" strokeWidth={3} name="Uptime %" />
-                        <Line type="monotone" dataKey="transactions" stroke="#ffc658" strokeWidth={3} name="Transactions (M)" />
-                      </LineChart>
-                    </ResponsiveContainer>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="report-type">Report Type</Label>
+                        <Select>
+                          <SelectTrigger data-testid="select-report-type">
+                            <SelectValue placeholder="Select report type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="performance">Performance Report</SelectItem>
+                            <SelectItem value="device-health">Device Health Report</SelectItem>
+                            <SelectItem value="revenue">Revenue Analysis</SelectItem>
+                            <SelectItem value="vendor">Vendor Comparison</SelectItem>
+                            <SelectItem value="regional">Regional Analysis</SelectItem>
+                            <SelectItem value="custom">Custom Report</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="date-range">Date Range</Label>
+                        <Select>
+                          <SelectTrigger data-testid="select-date-range">
+                            <SelectValue placeholder="Select date range" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="today">Today</SelectItem>
+                            <SelectItem value="yesterday">Yesterday</SelectItem>
+                            <SelectItem value="week">Last 7 Days</SelectItem>
+                            <SelectItem value="month">Last 30 Days</SelectItem>
+                            <SelectItem value="quarter">Last Quarter</SelectItem>
+                            <SelectItem value="year">Last Year</SelectItem>
+                            <SelectItem value="custom">Custom Range</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="region-filter">Region Filter</Label>
+                        <Select>
+                          <SelectTrigger data-testid="select-region-filter">
+                            <SelectValue placeholder="All Regions" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Regions</SelectItem>
+                            <SelectItem value="north">North</SelectItem>
+                            <SelectItem value="south">South</SelectItem>
+                            <SelectItem value="east">East</SelectItem>
+                            <SelectItem value="west">West</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="vendor-filter">Vendor Filter</Label>
+                        <Select>
+                          <SelectTrigger data-testid="select-vendor-filter">
+                            <SelectValue placeholder="All Vendors" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Vendors</SelectItem>
+                            <SelectItem value="bcil">BCIL</SelectItem>
+                            <SelectItem value="zebra">ZEBRA</SelectItem>
+                            <SelectItem value="imp">IMP</SelectItem>
+                            <SelectItem value="anj">ANJ</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <Separator className="my-4" />
+
+                    {/* Export Options */}
+                    <div className="flex flex-wrap gap-3">
+                      <Button
+                        onClick={() => {
+                          const worksheet = XLSX.utils.json_to_sheet(detailedReportData);
+                          const workbook = XLSX.utils.book_new();
+                          XLSX.utils.book_append_sheet(workbook, worksheet, 'Device Report');
+                          XLSX.writeFile(workbook, 'device_report.xlsx');
+                        }}
+                        className="flex items-center gap-2"
+                        data-testid="button-export-excel"
+                      >
+                        <Download className="w-4 h-4" />
+                        Export to Excel
+                      </Button>
+
+                      <CSVLink
+                        data={detailedReportData}
+                        filename="device_report.csv"
+                        className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-primary-foreground bg-primary rounded-md hover:bg-primary/90 transition-colors"
+                        data-testid="button-export-csv"
+                      >
+                        <Download className="w-4 h-4" />
+                        Export to CSV
+                      </CSVLink>
+
+                      <Button
+                        onClick={() => {
+                          const doc = new jsPDF();
+                          doc.text('Device Performance Report', 20, 20);
+                          (doc as any).autoTable({
+                            head: [['Device ID', 'Name', 'Vendor', 'Status', 'Uptime %', 'Transactions', 'Revenue (Cr)']],
+                            body: detailedReportData.map(device => [
+                              device.id,
+                              device.name,
+                              device.vendor,
+                              device.status,
+                              device.uptime.toFixed(1),
+                              device.transactions.toLocaleString(),
+                              device.revenue.toFixed(1)
+                            ]),
+                            startY: 30,
+                          });
+                          doc.save('device_report.pdf');
+                        }}
+                        variant="outline"
+                        className="flex items-center gap-2"
+                        data-testid="button-export-pdf"
+                      >
+                        <FileText className="w-4 h-4" />
+                        Export to PDF
+                      </Button>
+
+                      <Button variant="outline" className="flex items-center gap-2" data-testid="button-schedule-report">
+                        <Calendar className="w-4 h-4" />
+                        Schedule Report
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
+
+                {/* Comprehensive Analytics */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Monthly Performance Comparison</CardTitle>
+                      <CardDescription>Multi-metric analysis over 6 months</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={350}>
+                        <ComposedChart data={monthlyComparisonData}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="month" />
+                          <YAxis yAxisId="left" />
+                          <YAxis yAxisId="right" orientation="right" />
+                          <Tooltip />
+                          <Legend />
+                          <Bar yAxisId="left" dataKey="totalDevices" fill="#8884d8" name="Total Devices" />
+                          <Bar yAxisId="left" dataKey="activeDevices" fill="#82ca9d" name="Active Devices" />
+                          <Line yAxisId="right" type="monotone" dataKey="revenue" stroke="#ff7300" strokeWidth={3} name="Revenue (Cr)" />
+                          <Line yAxisId="right" type="monotone" dataKey="transactions" stroke="#ffc658" strokeWidth={3} name="Transactions (M)" />
+                        </ComposedChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Vendor Performance Matrix</CardTitle>
+                      <CardDescription>Comprehensive vendor comparison metrics</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={350}>
+                        <BarChart data={vendorPerformanceData} layout="horizontal">
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis type="number" />
+                          <YAxis dataKey="vendor" type="category" width={60} />
+                          <Tooltip />
+                          <Legend />
+                          <Bar dataKey="uptime" fill="#22c55e" name="Uptime %" />
+                          <Bar dataKey="efficiency" fill="#3b82f6" name="Efficiency %" />
+                          <Bar dataKey="satisfaction" fill="#f59e0b" name="Satisfaction %" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Detailed Data Table */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Table className="w-5 h-5" />
+                      Detailed Device Performance Report
+                    </CardTitle>
+                    <CardDescription>Interactive table with comprehensive device metrics</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="mb-4 flex items-center gap-4">
+                      <div className="relative flex-1 max-w-sm">
+                        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input placeholder="Search devices..." className="pl-8" data-testid="input-search-devices" />
+                      </div>
+                      <Button variant="outline" size="sm" data-testid="button-filter-table">
+                        <Filter className="w-4 h-4 mr-2" />
+                        Filters
+                      </Button>
+                    </div>
+
+                    <div className="rounded-md border overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead className="bg-muted/50">
+                            <tr className="border-b">
+                              <th className="text-left p-3 font-medium">Device ID</th>
+                              <th className="text-left p-3 font-medium">Name</th>
+                              <th className="text-left p-3 font-medium">Vendor</th>
+                              <th className="text-left p-3 font-medium">Region</th>
+                              <th className="text-left p-3 font-medium">Status</th>
+                              <th className="text-right p-3 font-medium">Uptime %</th>
+                              <th className="text-right p-3 font-medium">Transactions</th>
+                              <th className="text-right p-3 font-medium">Revenue (Cr)</th>
+                              <th className="text-right p-3 font-medium">Health Score</th>
+                              <th className="text-left p-3 font-medium">Last Update</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {detailedReportData.map((device, index) => (
+                              <tr key={device.id} className={index % 2 === 0 ? 'bg-background' : 'bg-muted/25'} data-testid={`row-device-${device.id}`}>
+                                <td className="p-3 font-mono text-xs">{device.id}</td>
+                                <td className="p-3 font-medium">{device.name}</td>
+                                <td className="p-3">
+                                  <Badge variant="outline">{device.vendor}</Badge>
+                                </td>
+                                <td className="p-3">{device.region}</td>
+                                <td className="p-3">
+                                  <Badge 
+                                    variant={device.status === 'Online' ? 'default' : device.status === 'Offline' ? 'destructive' : 'secondary'}
+                                    className={device.status === 'Online' ? 'bg-green-600' : ''}
+                                  >
+                                    {device.status}
+                                  </Badge>
+                                </td>
+                                <td className="p-3 text-right font-mono">
+                                  <div className="flex items-center justify-end gap-2">
+                                    <span className={device.uptime >= 98 ? 'text-green-600' : device.uptime >= 95 ? 'text-yellow-600' : 'text-red-600'}>
+                                      {device.uptime.toFixed(1)}%
+                                    </span>
+                                  </div>
+                                </td>
+                                <td className="p-3 text-right font-mono">{device.transactions.toLocaleString()}</td>
+                                <td className="p-3 text-right font-mono text-green-600">₹{device.revenue.toFixed(1)}</td>
+                                <td className="p-3 text-right">
+                                  <div className="flex items-center justify-end gap-2">
+                                    <Progress value={device.health} className="h-2 w-16" />
+                                    <span className="font-mono text-xs">{device.health}</span>
+                                  </div>
+                                </td>
+                                <td className="p-3 text-xs text-muted-foreground">{device.lastUpdate}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
+                      <span>Showing {detailedReportData.length} of {detailedReportData.length} devices</span>
+                      <div className="flex items-center gap-2">
+                        <Button variant="outline" size="sm" disabled data-testid="button-previous-page">Previous</Button>
+                        <span className="px-3 py-1 bg-primary text-primary-foreground rounded text-xs">1</span>
+                        <Button variant="outline" size="sm" disabled data-testid="button-next-page">Next</Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Additional Analytics Charts */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Alert Trends</CardTitle>
+                      <CardDescription>Daily alert patterns</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={250}>
+                        <AreaChart data={alertTrends}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="time" />
+                          <YAxis />
+                          <Tooltip />
+                          <Area type="monotone" dataKey="critical" stackId="1" stroke="#ef4444" fill="#ef4444" fillOpacity={0.6} />
+                          <Area type="monotone" dataKey="warning" stackId="1" stroke="#f97316" fill="#f97316" fillOpacity={0.6} />
+                          <Area type="monotone" dataKey="info" stackId="1" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.6} />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Revenue Distribution</CardTitle>
+                      <CardDescription>By vendor performance</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={250}>
+                        <PieChart>
+                          <Pie
+                            data={vendorPerformanceData}
+                            cx="50%"
+                            cy="50%"
+                            outerRadius={80}
+                            fill="#8884d8"
+                            dataKey="revenue"
+                            label={({ vendor, percent }) => `${vendor} ${(percent * 100).toFixed(0)}%`}
+                          >
+                            {vendorPerformanceData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={`hsl(${index * 90}, 70%, 50%)`} />
+                            ))}
+                          </Pie>
+                          <Tooltip formatter={(value) => [`₹${value}Cr`, 'Revenue']} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Performance KPIs</CardTitle>
+                      <CardDescription>Key metrics overview</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span>System Availability</span>
+                          <span className="font-mono">99.3%</span>
+                        </div>
+                        <Progress value={99.3} className="h-2" />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span>Transaction Success</span>
+                          <span className="font-mono">97.8%</span>
+                        </div>
+                        <Progress value={97.8} className="h-2" />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span>Revenue Target</span>
+                          <span className="font-mono">104.2%</span>
+                        </div>
+                        <Progress value={100} className="h-2" />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span>Customer Satisfaction</span>
+                          <span className="font-mono">91.5%</span>
+                        </div>
+                        <Progress value={91.5} className="h-2" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
               </TabsContent>
             </Tabs>
           </div>
@@ -867,40 +1222,253 @@ function NECEngineerDashboard() {
               </TabsContent>
 
               <TabsContent value="reports" className="space-y-6">
+                {/* Regional Report Controls */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>Regional Summary Report</CardTitle>
-                    <CardDescription>Comprehensive overview of your assigned region</CardDescription>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="w-5 h-5" />
+                      Regional Reporting & Analytics
+                    </CardTitle>
+                    <CardDescription>Generate detailed reports for your assigned region with export capabilities</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                      <div className="text-center p-4 bg-green-50 dark:bg-green-950 rounded-lg">
-                        <div className="text-2xl font-bold text-green-600">688</div>
-                        <div className="text-sm text-muted-foreground">Total Devices</div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="engineer-report-type">Report Type</Label>
+                        <Select>
+                          <SelectTrigger data-testid="select-engineer-report-type">
+                            <SelectValue placeholder="Select report type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="regional-summary">Regional Summary</SelectItem>
+                            <SelectItem value="device-health">Device Health Report</SelectItem>
+                            <SelectItem value="maintenance">Maintenance Report</SelectItem>
+                            <SelectItem value="performance">Performance Analysis</SelectItem>
+                            <SelectItem value="alerts">Alert Analysis</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
-                      <div className="text-center p-4 bg-blue-50 dark:bg-blue-950 rounded-lg">
-                        <div className="text-2xl font-bold text-blue-600">97.1%</div>
-                        <div className="text-sm text-muted-foreground">Avg Performance</div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="engineer-date-range">Time Period</Label>
+                        <Select>
+                          <SelectTrigger data-testid="select-engineer-date-range">
+                            <SelectValue placeholder="Select time period" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="today">Today</SelectItem>
+                            <SelectItem value="week">This Week</SelectItem>
+                            <SelectItem value="month">This Month</SelectItem>
+                            <SelectItem value="quarter">This Quarter</SelectItem>
+                            <SelectItem value="custom">Custom Range</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
-                      <div className="text-center p-4 bg-orange-50 dark:bg-orange-950 rounded-lg">
-                        <div className="text-2xl font-bold text-orange-600">23</div>
-                        <div className="text-sm text-muted-foreground">Open Alerts</div>
-                      </div>
-                      <div className="text-center p-4 bg-purple-50 dark:bg-purple-950 rounded-lg">
-                        <div className="text-2xl font-bold text-purple-600">28.4K</div>
-                        <div className="text-sm text-muted-foreground">Daily Transactions</div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="engineer-location-filter">Location Filter</Label>
+                        <Select>
+                          <SelectTrigger data-testid="select-engineer-location-filter">
+                            <SelectValue placeholder="All Locations" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Locations</SelectItem>
+                            <SelectItem value="mumbai-east">Mumbai East</SelectItem>
+                            <SelectItem value="mumbai-west">Mumbai West</SelectItem>
+                            <SelectItem value="mumbai-north">Mumbai North</SelectItem>
+                            <SelectItem value="pune">Pune</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
-                    
-                    <ResponsiveContainer width="100%" height={250}>
-                      <BarChart data={engineerRegionalData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" />
-                        <YAxis />
-                        <Tooltip />
-                        <Bar dataKey="devices" fill="#3b82f6" name="Total Devices" />
-                      </BarChart>
-                    </ResponsiveContainer>
+
+                    <Separator className="my-4" />
+
+                    {/* Regional Export Options */}
+                    <div className="flex flex-wrap gap-3">
+                      <Button
+                        onClick={() => {
+                          const regionalData = engineerRegionalData.map(location => ({
+                            Location: location.name,
+                            'Total Devices': location.devices,
+                            'Online Devices': location.online,
+                            'Offline Devices': location.offline,
+                            'Performance Score': location.performance + '%'
+                          }));
+                          const worksheet = XLSX.utils.json_to_sheet(regionalData);
+                          const workbook = XLSX.utils.book_new();
+                          XLSX.utils.book_append_sheet(workbook, worksheet, 'Regional Report');
+                          XLSX.writeFile(workbook, 'regional_report.xlsx');
+                        }}
+                        className="flex items-center gap-2"
+                        data-testid="button-export-regional-excel"
+                      >
+                        <Download className="w-4 h-4" />
+                        Export to Excel
+                      </Button>
+
+                      <CSVLink
+                        data={engineerRegionalData}
+                        filename="regional_report.csv"
+                        className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-primary-foreground bg-primary rounded-md hover:bg-primary/90 transition-colors"
+                        data-testid="button-export-regional-csv"
+                      >
+                        <Download className="w-4 h-4" />
+                        Export to CSV
+                      </CSVLink>
+
+                      <Button
+                        onClick={() => {
+                          const doc = new jsPDF();
+                          doc.text('Regional Performance Report', 20, 20);
+                          (doc as any).autoTable({
+                            head: [['Location', 'Total Devices', 'Online', 'Offline', 'Performance']],
+                            body: engineerRegionalData.map(location => [
+                              location.name,
+                              location.devices,
+                              location.online,
+                              location.offline,
+                              location.performance.toFixed(1) + '%'
+                            ]),
+                            startY: 30,
+                          });
+                          doc.save('regional_report.pdf');
+                        }}
+                        variant="outline"
+                        className="flex items-center gap-2"
+                        data-testid="button-export-regional-pdf"
+                      >
+                        <FileText className="w-4 h-4" />
+                        Export to PDF
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Enhanced Regional Analytics */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Regional Summary Overview</CardTitle>
+                      <CardDescription>Key metrics for your assigned region</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 gap-4 mb-6">
+                        <div className="text-center p-4 bg-green-50 dark:bg-green-950 rounded-lg">
+                          <div className="text-2xl font-bold text-green-600">688</div>
+                          <div className="text-sm text-muted-foreground">Total Devices</div>
+                        </div>
+                        <div className="text-center p-4 bg-blue-50 dark:bg-blue-950 rounded-lg">
+                          <div className="text-2xl font-bold text-blue-600">97.1%</div>
+                          <div className="text-sm text-muted-foreground">Avg Performance</div>
+                        </div>
+                        <div className="text-center p-4 bg-orange-50 dark:bg-orange-950 rounded-lg">
+                          <div className="text-2xl font-bold text-orange-600">23</div>
+                          <div className="text-sm text-muted-foreground">Open Alerts</div>
+                        </div>
+                        <div className="text-center p-4 bg-purple-50 dark:bg-purple-950 rounded-lg">
+                          <div className="text-2xl font-bold text-purple-600">28.4K</div>
+                          <div className="text-sm text-muted-foreground">Daily Transactions</div>
+                        </div>
+                      </div>
+                      
+                      <ResponsiveContainer width="100%" height={250}>
+                        <BarChart data={engineerRegionalData}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="name" />
+                          <YAxis />
+                          <Tooltip />
+                          <Legend />
+                          <Bar dataKey="online" fill="#22c55e" name="Online" />
+                          <Bar dataKey="offline" fill="#ef4444" name="Offline" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Performance Trends</CardTitle>
+                      <CardDescription>Location performance over time</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <LineChart data={engineerRegionalData}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="name" />
+                          <YAxis />
+                          <Tooltip />
+                          <Line type="monotone" dataKey="performance" stroke="#8884d8" strokeWidth={2} name="Performance Score" />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Detailed Regional Data Table */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Table className="w-5 h-5" />
+                      Regional Device Performance Details
+                    </CardTitle>
+                    <CardDescription>Comprehensive view of all devices in your region</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="mb-4 flex items-center gap-4">
+                      <div className="relative flex-1 max-w-sm">
+                        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input placeholder="Search locations..." className="pl-8" data-testid="input-search-regional" />
+                      </div>
+                      <Button variant="outline" size="sm" data-testid="button-filter-regional">
+                        <Filter className="w-4 h-4 mr-2" />
+                        Filters
+                      </Button>
+                    </div>
+
+                    <div className="rounded-md border overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead className="bg-muted/50">
+                            <tr className="border-b">
+                              <th className="text-left p-3 font-medium">Location</th>
+                              <th className="text-right p-3 font-medium">Total Devices</th>
+                              <th className="text-right p-3 font-medium">Online</th>
+                              <th className="text-right p-3 font-medium">Offline</th>
+                              <th className="text-right p-3 font-medium">Performance Score</th>
+                              <th className="text-right p-3 font-medium">Uptime %</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {engineerRegionalData.map((location, index) => (
+                              <tr key={location.name} className={index % 2 === 0 ? 'bg-background' : 'bg-muted/25'} data-testid={`row-location-${location.name.replace(/\s+/g, '-')}`}>
+                                <td className="p-3 font-medium">{location.name}</td>
+                                <td className="p-3 text-right font-mono">{location.devices}</td>
+                                <td className="p-3 text-right">
+                                  <span className="text-green-600 font-mono">{location.online}</span>
+                                </td>
+                                <td className="p-3 text-right">
+                                  <span className={`font-mono ${location.offline > 5 ? 'text-red-600' : 'text-gray-600'}`}>
+                                    {location.offline}
+                                  </span>
+                                </td>
+                                <td className="p-3 text-right">
+                                  <div className="flex items-center justify-end gap-2">
+                                    <Progress value={location.performance} className="h-2 w-16" />
+                                    <span className="font-mono text-xs">{location.performance.toFixed(1)}</span>
+                                  </div>
+                                </td>
+                                <td className="p-3 text-right font-mono">
+                                  <span className={location.performance >= 98 ? 'text-green-600' : location.performance >= 95 ? 'text-yellow-600' : 'text-red-600'}>
+                                    {((location.online / location.devices) * 100).toFixed(1)}%
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -940,6 +1508,34 @@ const clientRevenueData = [
   { month: 'Apr', revenue: 3.1, transactions: 3.8, efficiency: 97.1 },
   { month: 'May', revenue: 3.4, transactions: 4.2, efficiency: 97.8 },
   { month: 'Jun', revenue: 3.7, transactions: 4.6, efficiency: 98.2 }
+];
+
+// Advanced reporting data
+const detailedReportData = [
+  { id: 'FR_001', name: 'Mumbai Central FR', vendor: 'BCIL', region: 'West', status: 'Online', uptime: 99.8, transactions: 15420, revenue: 2.3, lastUpdate: '2 min ago', health: 95 },
+  { id: 'HHD_002', name: 'Pune Handheld 02', vendor: 'ZEBRA', region: 'West', status: 'Online', uptime: 98.5, transactions: 8950, revenue: 1.7, lastUpdate: '5 min ago', health: 92 },
+  { id: 'FR_003', name: 'Delhi North FR', vendor: 'IMP', region: 'North', status: 'Offline', uptime: 87.2, transactions: 12300, revenue: 1.9, lastUpdate: '2 hrs ago', health: 78 },
+  { id: 'FR_004', name: 'Chennai East FR', vendor: 'ANJ', region: 'South', status: 'Online', uptime: 97.3, transactions: 11200, revenue: 1.8, lastUpdate: '1 min ago', health: 89 },
+  { id: 'HHD_005', name: 'Kolkata Handheld 05', vendor: 'BCIL', region: 'East', status: 'Maintenance', uptime: 94.1, transactions: 7850, revenue: 1.4, lastUpdate: '1 hr ago', health: 85 },
+  { id: 'FR_006', name: 'Bangalore South FR', vendor: 'ZEBRA', region: 'South', status: 'Online', uptime: 99.1, transactions: 14800, revenue: 2.2, lastUpdate: '3 min ago', health: 96 },
+  { id: 'FR_007', name: 'Hyderabad Central FR', vendor: 'IMP', region: 'South', status: 'Online', uptime: 96.8, transactions: 13500, revenue: 2.0, lastUpdate: '4 min ago', health: 91 },
+  { id: 'HHD_008', name: 'Ahmedabad Handheld 08', vendor: 'ANJ', region: 'West', status: 'Online', uptime: 95.7, transactions: 9200, revenue: 1.6, lastUpdate: '6 min ago', health: 88 }
+];
+
+const monthlyComparisonData = [
+  { month: 'Jan', totalDevices: 4800, activeDevices: 4680, revenue: 2.1, transactions: 2.8, downtime: 4.2, alerts: 45 },
+  { month: 'Feb', totalDevices: 4850, activeDevices: 4730, revenue: 2.4, transactions: 3.1, downtime: 3.8, alerts: 38 },
+  { month: 'Mar', totalDevices: 4920, activeDevices: 4820, revenue: 2.8, transactions: 3.5, downtime: 2.9, alerts: 32 },
+  { month: 'Apr', totalDevices: 5000, activeDevices: 4890, revenue: 3.1, transactions: 3.8, downtime: 3.1, alerts: 28 },
+  { month: 'May', totalDevices: 5080, activeDevices: 4970, revenue: 3.4, transactions: 4.2, downtime: 2.2, alerts: 25 },
+  { month: 'Jun', totalDevices: 5120, activeDevices: 5010, revenue: 3.7, transactions: 4.6, downtime: 2.1, alerts: 22 }
+];
+
+const vendorPerformanceData = [
+  { vendor: 'BCIL', devices: 2890, uptime: 98.9, efficiency: 96.2, revenue: 45.8, satisfaction: 94 },
+  { vendor: 'ZEBRA', devices: 1234, uptime: 97.8, efficiency: 95.1, revenue: 32.1, satisfaction: 92 },
+  { vendor: 'IMP', devices: 756, uptime: 96.5, efficiency: 93.8, revenue: 18.7, satisfaction: 89 },
+  { vendor: 'ANJ', devices: 240, uptime: 95.2, efficiency: 91.5, revenue: 12.4, satisfaction: 87 }
 ];
 
 const serviceMetrics = [
@@ -1571,59 +2167,339 @@ function ClientDashboard() {
               </TabsContent>
 
               <TabsContent value="reports" className="space-y-6">
+                {/* Business Report Controls */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>Business Performance Report</CardTitle>
-                    <CardDescription>Comprehensive view of infrastructure impact on business metrics</CardDescription>
+                    <CardTitle className="flex items-center gap-2">
+                      <BarChart3 className="w-5 h-5" />
+                      Business Intelligence Reports
+                    </CardTitle>
+                    <CardDescription>Professional business reports with comprehensive data export capabilities</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <ResponsiveContainer width="100%" height={350}>
-                      <LineChart data={clientRevenueData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="month" />
-                        <YAxis />
-                        <Tooltip />
-                        <Legend />
-                        <Line type="monotone" dataKey="revenue" stroke="#22c55e" strokeWidth={3} name="Revenue (Cr)" />
-                        <Line type="monotone" dataKey="transactions" stroke="#3b82f6" strokeWidth={3} name="Transactions (M)" />
-                        <Line type="monotone" dataKey="efficiency" stroke="#f59e0b" strokeWidth={3} name="Efficiency %" />
-                      </LineChart>
-                    </ResponsiveContainer>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="client-report-type">Report Category</Label>
+                        <Select>
+                          <SelectTrigger data-testid="select-client-report-type">
+                            <SelectValue placeholder="Select report category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="business-performance">Business Performance</SelectItem>
+                            <SelectItem value="financial-summary">Financial Summary</SelectItem>
+                            <SelectItem value="service-levels">Service Level Reports</SelectItem>
+                            <SelectItem value="efficiency-analysis">Efficiency Analysis</SelectItem>
+                            <SelectItem value="trends-forecast">Trends & Forecasting</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="client-date-range">Reporting Period</Label>
+                        <Select>
+                          <SelectTrigger data-testid="select-client-date-range">
+                            <SelectValue placeholder="Select period" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="monthly">Monthly</SelectItem>
+                            <SelectItem value="quarterly">Quarterly</SelectItem>
+                            <SelectItem value="yearly">Annual</SelectItem>
+                            <SelectItem value="custom">Custom Period</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="client-format">Export Format</Label>
+                        <Select>
+                          <SelectTrigger data-testid="select-client-format">
+                            <SelectValue placeholder="Choose format" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="executive-summary">Executive Summary</SelectItem>
+                            <SelectItem value="detailed-analysis">Detailed Analysis</SelectItem>
+                            <SelectItem value="dashboard-view">Dashboard View</SelectItem>
+                            <SelectItem value="raw-data">Raw Data Export</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <Separator className="my-4" />
+
+                    {/* Business Export Options */}
+                    <div className="flex flex-wrap gap-3">
+                      <Button
+                        onClick={() => {
+                          const businessData = clientRevenueData.map(data => ({
+                            Month: data.month,
+                            'Revenue (Cr)': data.revenue,
+                            'Transactions (M)': data.transactions,
+                            'Efficiency (%)': data.efficiency
+                          }));
+                          const worksheet = XLSX.utils.json_to_sheet(businessData);
+                          const workbook = XLSX.utils.book_new();
+                          XLSX.utils.book_append_sheet(workbook, worksheet, 'Business Report');
+                          XLSX.writeFile(workbook, 'business_performance_report.xlsx');
+                        }}
+                        className="flex items-center gap-2"
+                        data-testid="button-export-business-excel"
+                      >
+                        <Download className="w-4 h-4" />
+                        Export Business Report
+                      </Button>
+
+                      <CSVLink
+                        data={clientRevenueData.map(data => ({
+                          Month: data.month,
+                          'Revenue (Cr)': data.revenue,
+                          'Transactions (M)': data.transactions,
+                          'Efficiency (%)': data.efficiency
+                        }))}
+                        filename="business_performance.csv"
+                        className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-primary-foreground bg-primary rounded-md hover:bg-primary/90 transition-colors"
+                        data-testid="button-export-business-csv"
+                      >
+                        <Download className="w-4 h-4" />
+                        Export to CSV
+                      </CSVLink>
+
+                      <Button
+                        onClick={() => {
+                          const doc = new jsPDF();
+                          doc.text('Business Performance Report', 20, 20);
+                          doc.text('Executive Summary', 20, 35);
+                          (doc as any).autoTable({
+                            head: [['Month', 'Revenue (Cr)', 'Transactions (M)', 'Efficiency (%)']],
+                            body: clientRevenueData.map(data => [
+                              data.month,
+                              '₹' + data.revenue.toFixed(1),
+                              data.transactions.toFixed(1) + 'M',
+                              data.efficiency.toFixed(1) + '%'
+                            ]),
+                            startY: 45,
+                          });
+                          doc.save('business_performance_report.pdf');
+                        }}
+                        variant="outline"
+                        className="flex items-center gap-2"
+                        data-testid="button-export-business-pdf"
+                      >
+                        <FileText className="w-4 h-4" />
+                        Executive Report (PDF)
+                      </Button>
+
+                      <Button variant="outline" className="flex items-center gap-2" data-testid="button-schedule-business">
+                        <Calendar className="w-4 h-4" />
+                        Schedule Reports
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Enhanced Business Analytics */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Business Performance Trends</CardTitle>
+                      <CardDescription>6-month comprehensive business metrics analysis</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={350}>
+                        <ComposedChart data={clientRevenueData}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="month" />
+                          <YAxis yAxisId="left" />
+                          <YAxis yAxisId="right" orientation="right" />
+                          <Tooltip />
+                          <Legend />
+                          <Bar yAxisId="left" dataKey="transactions" fill="#3b82f6" name="Transactions (M)" />
+                          <Line yAxisId="right" type="monotone" dataKey="revenue" stroke="#22c55e" strokeWidth={3} name="Revenue (Cr)" />
+                          <Line yAxisId="right" type="monotone" dataKey="efficiency" stroke="#f59e0b" strokeWidth={3} name="Efficiency %" />
+                        </ComposedChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+
                   <Card>
                     <CardHeader>
                       <CardTitle>Key Performance Indicators</CardTitle>
+                      <CardDescription>Current month vs targets</CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <div className="space-y-3">
-                        <div className="text-center">
-                          <div className="text-3xl font-bold text-green-600">98.2%</div>
-                          <div className="text-sm text-muted-foreground">System Efficiency</div>
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm font-medium">System Efficiency</span>
+                            <span className="text-2xl font-bold text-green-600">98.2%</span>
+                          </div>
+                          <Progress value={98.2} className="h-3" />
+                          <div className="text-xs text-muted-foreground">Target: 95% | Current: Exceeding</div>
                         </div>
-                        <div className="text-center">
-                          <div className="text-3xl font-bold text-blue-600">4.6M</div>
-                          <div className="text-sm text-muted-foreground">Monthly Transactions</div>
+                        
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm font-medium">Monthly Transactions</span>
+                            <span className="text-2xl font-bold text-blue-600">4.6M</span>
+                          </div>
+                          <Progress value={92} className="h-3" />
+                          <div className="text-xs text-muted-foreground">Target: 5M | Current: 92% of target</div>
                         </div>
-                        <div className="text-center">
-                          <div className="text-3xl font-bold text-green-600">₹3.7Cr</div>
-                          <div className="text-sm text-muted-foreground">Monthly Revenue</div>
+                        
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm font-medium">Monthly Revenue</span>
+                            <span className="text-2xl font-bold text-green-600">₹3.7Cr</span>
+                          </div>
+                          <Progress value={103} className="h-3" />
+                          <div className="text-xs text-muted-foreground">Target: ₹3.6Cr | Current: 103% of target</div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm font-medium">Growth Rate</span>
+                            <span className="text-2xl font-bold text-green-600">+8.9%</span>
+                          </div>
+                          <Progress value={89} className="h-3" />
+                          <div className="text-xs text-muted-foreground">YoY comparison | Steady growth trend</div>
                         </div>
                       </div>
                     </CardContent>
                   </Card>
+                </div>
 
-                  <Card className="lg:col-span-2">
+                {/* Revenue & Performance Analysis */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <Card>
                     <CardHeader>
-                      <CardTitle>Device Status Summary</CardTitle>
+                      <CardTitle>Revenue Distribution</CardTitle>
+                      <CardDescription>Monthly revenue breakdown</CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <DeviceListTable onDeviceSelect={(id) => {}} />
+                      <ResponsiveContainer width="100%" height={250}>
+                        <PieChart>
+                          <Pie
+                            data={clientRevenueData}
+                            cx="50%"
+                            cy="50%"
+                            outerRadius={80}
+                            fill="#8884d8"
+                            dataKey="revenue"
+                            label={({ month, percent }) => `${month} ${(percent * 100).toFixed(0)}%`}
+                          >
+                            {clientRevenueData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={`hsl(${index * 60}, 70%, 50%)`} />
+                            ))}
+                          </Pie>
+                          <Tooltip formatter={(value) => [`₹${value}Cr`, 'Revenue']} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Transaction Volume Trends</CardTitle>
+                      <CardDescription>6-month transaction analysis</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={250}>
+                        <AreaChart data={clientRevenueData}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="month" />
+                          <YAxis />
+                          <Tooltip />
+                          <Area type="monotone" dataKey="transactions" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.6} />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Business Insights</CardTitle>
+                      <CardDescription>Key business metrics summary</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="p-3 bg-green-50 dark:bg-green-950 rounded-lg">
+                        <div className="text-sm font-medium text-green-800 dark:text-green-200">Revenue Growth</div>
+                        <div className="text-lg font-bold text-green-600">+8.9%</div>
+                        <div className="text-xs text-green-600">vs last month</div>
+                      </div>
+                      
+                      <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
+                        <div className="text-sm font-medium text-blue-800 dark:text-blue-200">Avg Efficiency</div>
+                        <div className="text-lg font-bold text-blue-600">96.8%</div>
+                        <div className="text-xs text-blue-600">6-month average</div>
+                      </div>
+                      
+                      <div className="p-3 bg-purple-50 dark:bg-purple-950 rounded-lg">
+                        <div className="text-sm font-medium text-purple-800 dark:text-purple-200">ROI</div>
+                        <div className="text-lg font-bold text-purple-600">124%</div>
+                        <div className="text-xs text-purple-600">Infrastructure investment</div>
+                      </div>
                     </CardContent>
                   </Card>
                 </div>
+
+                {/* Business Summary Table */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Table className="w-5 h-5" />
+                      Executive Business Summary
+                    </CardTitle>
+                    <CardDescription>Comprehensive monthly business performance data</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="rounded-md border overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead className="bg-muted/50">
+                            <tr className="border-b">
+                              <th className="text-left p-3 font-medium">Period</th>
+                              <th className="text-right p-3 font-medium">Revenue (Cr)</th>
+                              <th className="text-right p-3 font-medium">Transactions (M)</th>
+                              <th className="text-right p-3 font-medium">Efficiency (%)</th>
+                              <th className="text-right p-3 font-medium">Growth Rate</th>
+                              <th className="text-center p-3 font-medium">Performance</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {clientRevenueData.map((data, index) => {
+                              const prevData = index > 0 ? clientRevenueData[index - 1] : null;
+                              const growthRate = prevData ? ((data.revenue - prevData.revenue) / prevData.revenue * 100) : 0;
+                              
+                              return (
+                                <tr key={data.month} className={index % 2 === 0 ? 'bg-background' : 'bg-muted/25'} data-testid={`row-business-${data.month}`}>
+                                  <td className="p-3 font-medium">{data.month} 2024</td>
+                                  <td className="p-3 text-right font-mono text-green-600">₹{data.revenue.toFixed(1)}</td>
+                                  <td className="p-3 text-right font-mono">{data.transactions.toFixed(1)}M</td>
+                                  <td className="p-3 text-right">
+                                    <div className="flex items-center justify-end gap-2">
+                                      <Progress value={data.efficiency} className="h-2 w-16" />
+                                      <span className="font-mono text-xs">{data.efficiency.toFixed(1)}%</span>
+                                    </div>
+                                  </td>
+                                  <td className="p-3 text-right font-mono">
+                                    <span className={growthRate >= 0 ? 'text-green-600' : 'text-red-600'}>
+                                      {growthRate >= 0 ? '+' : ''}{growthRate.toFixed(1)}%
+                                    </span>
+                                  </td>
+                                  <td className="p-3 text-center">
+                                    <Badge variant={data.efficiency >= 97 ? "default" : data.efficiency >= 95 ? "secondary" : "destructive"}>
+                                      {data.efficiency >= 97 ? "Excellent" : data.efficiency >= 95 ? "Good" : "Needs Attention"}
+                                    </Badge>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </TabsContent>
 
               <TabsContent value="service" className="space-y-6">
