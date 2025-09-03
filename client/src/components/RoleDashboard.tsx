@@ -14,6 +14,7 @@ import LocationWiseDeviceStatus from "./LocationWiseDeviceStatus";
 import LastTagReadStatus from "./LastTagReadStatus";
 import WeeklyHealthProgress from "./WeeklyHealthProgress";
 import NLDSDeviceTable from "./NLDSDeviceTable";
+import EnhancedDeviceDataView from "./EnhancedDeviceDataView";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -232,8 +233,9 @@ function NECGeneralDashboard() {
           {/* Multi-tab Dashboard Content */}
           <div className="p-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-              <TabsList className="grid grid-cols-6 lg:w-fit">
+              <TabsList className="grid grid-cols-7 lg:w-fit">
                 <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
+                <TabsTrigger value="data" data-testid="tab-data">Data View</TabsTrigger>
                 <TabsTrigger value="performance" data-testid="tab-performance">Performance</TabsTrigger>
                 <TabsTrigger value="analytics" data-testid="tab-analytics">Analytics</TabsTrigger>
                 <TabsTrigger value="alerts" data-testid="tab-alerts">Alerts</TabsTrigger>
@@ -253,6 +255,11 @@ function NECGeneralDashboard() {
                 <WeeklyHealthProgress />
                 
                 <NLDSDeviceTable />
+              </TabsContent>
+
+              {/* Data View Tab - Advanced Filtering */}
+              <TabsContent value="data" className="space-y-6">
+                <EnhancedDeviceDataView />
               </TabsContent>
 
               {/* Performance Tab */}

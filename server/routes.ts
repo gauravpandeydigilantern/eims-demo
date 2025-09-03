@@ -121,6 +121,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Device metrics endpoint for advanced filtering
+  app.get('/api/device-metrics', isAuthenticated, async (req: any, res) => {
+    try {
+      const metrics = await storage.getLatestMetrics();
+      res.json(metrics);
+    } catch (error) {
+      console.error("Error fetching device metrics:", error);
+      res.status(500).json({ message: "Failed to fetch device metrics" });
+    }
+  });
+
   app.get('/api/devices/stats', isAuthenticated, hasRegionalAccess, async (req: any, res) => {
     try {
       const user = req.user as User;
