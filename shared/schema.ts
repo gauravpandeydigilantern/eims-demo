@@ -54,13 +54,14 @@ export const vendorEnum = pgEnum('vendor', ['BCIL', 'ZEBRA', 'IMP', 'ANJ']);
 export const devices = pgTable("devices", {
   id: varchar("id").primaryKey(), // e.g., FR_MUM_001, HHD_BLR_023
   macAddress: varchar("mac_address").unique(),
+  assetId: varchar("asset_id"), // Asset ID as seen in real system
   serialNumber: varchar("serial_number"),
   deviceType: deviceTypeEnum("device_type").notNull(),
   vendor: vendorEnum("vendor").notNull(),
   model: varchar("model"),
   firmwareVersion: varchar("firmware_version"),
   status: deviceStatusEnum("status").notNull().default('DOWN'),
-  subStatus: varchar("sub_status"), // active, standby, etc.
+  subStatus: varchar("sub_status"), // active, standby, time_off, down
   location: varchar("location").notNull(),
   tollPlaza: varchar("toll_plaza").notNull(),
   region: varchar("region").notNull(),
@@ -69,11 +70,15 @@ export const devices = pgTable("devices", {
   longitude: decimal("longitude", { precision: 11, scale: 8 }),
   installDate: timestamp("install_date"),
   lastSeen: timestamp("last_seen"),
+  lastSync: timestamp("last_sync"), // Last sync time as shown in real system
   lastTransaction: timestamp("last_transaction"),
   lastTagRead: timestamp("last_tag_read"),
   lastRegistration: timestamp("last_registration"),
   uptime: integer("uptime").default(0), // seconds
   transactionCount: integer("transaction_count").default(0),
+  pendingCount: integer("pending_count").default(0), // Pending transactions
+  successCount: integer("success_count").default(0), // Successful transactions
+  timeDifference: varchar("time_difference"), // Time difference as string (e.g., "0 Min")
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

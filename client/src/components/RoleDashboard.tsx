@@ -10,6 +10,10 @@ import AlertsPanel from "./AlertsPanel";
 import AIAssistant from "./AIAssistant";
 import WeatherPanel from "./WeatherPanel";
 import DeviceDetailModal from "./DeviceDetailModal";
+import LocationWiseDeviceStatus from "./LocationWiseDeviceStatus";
+import LastTagReadStatus from "./LastTagReadStatus";
+import WeeklyHealthProgress from "./WeeklyHealthProgress";
+import NLDSDeviceTable from "./NLDSDeviceTable";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -237,76 +241,18 @@ function NECGeneralDashboard() {
                 <TabsTrigger value="reports" data-testid="tab-reports">Reports</TabsTrigger>
               </TabsList>
 
-              {/* Overview Tab */}
+              {/* Overview Tab - NLDS Style */}
               <TabsContent value="overview" className="space-y-6">
                 <StatusMetrics />
                 
-                <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                  <div className="xl:col-span-2 space-y-6">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <Globe className="w-5 h-5" />
-                          Geographic Distribution
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <DeviceMap onDeviceSelect={setSelectedDeviceId} />
-                      </CardContent>
-                    </Card>
-                    
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Regional Performance Overview</CardTitle>
-                        <CardDescription>Device status and uptime by region</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <ResponsiveContainer width="100%" height={300}>
-                          <BarChart data={regionData}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="name" />
-                            <YAxis />
-                            <Tooltip />
-                            <Legend />
-                            <Bar dataKey="devices" fill="#8884d8" name="Total Devices" />
-                            <Bar dataKey="alerts" fill="#ff7300" name="Active Alerts" />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </CardContent>
-                    </Card>
-                  </div>
-                  
-                  <div className="space-y-6">
-                    <AlertsPanel />
-                    <WeatherPanel />
-                    
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Vendor Distribution</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <ResponsiveContainer width="100%" height={200}>
-                          <PieChart>
-                            <Pie
-                              data={vendorData}
-                              cx="50%"
-                              cy="50%"
-                              outerRadius={80}
-                              fill="#8884d8"
-                              dataKey="value"
-                              label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                            >
-                              {vendorData.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={entry.color} />
-                              ))}
-                            </Pie>
-                            <Tooltip />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      </CardContent>
-                    </Card>
-                  </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <LocationWiseDeviceStatus />
+                  <LastTagReadStatus />
                 </div>
+                
+                <WeeklyHealthProgress />
+                
+                <NLDSDeviceTable />
               </TabsContent>
 
               {/* Performance Tab */}
