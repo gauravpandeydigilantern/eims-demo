@@ -842,7 +842,7 @@ function NECGeneralDashboard() {
                           const doc = new jsPDF();
                           doc.text('Device Performance Report', 20, 20);
                           (doc as any).autoTable({
-                            head: [['Device ID', 'Name', 'Vendor', 'Status', 'Uptime %', 'Transactions', 'Revenue (Cr)']],
+                            head: [['Device ID', 'Name', 'Vendor', 'Status', 'Uptime %', 'Transactions', 'Health Score']],
                             body: detailedReportData.map(device => [
                               device.id,
                               device.name,
@@ -890,7 +890,7 @@ function NECGeneralDashboard() {
                           <Legend />
                           <Bar yAxisId="left" dataKey="totalDevices" fill="#8884d8" name="Total Devices" />
                           <Bar yAxisId="left" dataKey="activeDevices" fill="#82ca9d" name="Active Devices" />
-                          <Line yAxisId="right" type="monotone" dataKey="revenue" stroke="#ff7300" strokeWidth={3} name="Revenue (Cr)" />
+                          <Line yAxisId="right" type="monotone" dataKey="efficiency" stroke="#ff7300" strokeWidth={3} name="Efficiency %" />
                           <Line yAxisId="right" type="monotone" dataKey="transactions" stroke="#ffc658" strokeWidth={3} name="Transactions (M)" />
                         </ComposedChart>
                       </ResponsiveContainer>
@@ -952,7 +952,7 @@ function NECGeneralDashboard() {
                               <th className="text-left p-3 font-medium">Status</th>
                               <th className="text-right p-3 font-medium">Uptime %</th>
                               <th className="text-right p-3 font-medium">Transactions</th>
-                              <th className="text-right p-3 font-medium">Revenue (Cr)</th>
+                              <th className="text-right p-3 font-medium">Efficiency %</th>
                               <th className="text-right p-3 font-medium">Health Score</th>
                               <th className="text-left p-3 font-medium">Last Update</th>
                             </tr>
@@ -1032,8 +1032,8 @@ function NECGeneralDashboard() {
 
                   <Card>
                     <CardHeader>
-                      <CardTitle>Revenue Distribution</CardTitle>
-                      <CardDescription>By vendor performance</CardDescription>
+                      <CardTitle>Performance Distribution</CardTitle>
+                      <CardDescription>By vendor efficiency</CardDescription>
                     </CardHeader>
                     <CardContent>
                       <ResponsiveContainer width="100%" height={250}>
@@ -1081,7 +1081,7 @@ function NECGeneralDashboard() {
                       
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
-                          <span>Revenue Target</span>
+                          <span>Performance Target</span>
                           <span className="font-mono">104.2%</span>
                         </div>
                         <Progress value={100} className="h-2" />
@@ -1658,7 +1658,7 @@ const userActivityData = [
 ];
 
 // Client data
-const clientRevenueData = [
+const clientPerformanceData = [
   { month: 'Jan', uptime: 99.1, transactions: 2.8, efficiency: 94.2 },
   { month: 'Feb', uptime: 99.4, transactions: 3.1, efficiency: 95.1 },
   { month: 'Mar', uptime: 98.8, transactions: 3.5, efficiency: 96.3 },
@@ -2180,11 +2180,11 @@ function ClientDashboard() {
 
                   <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Monthly Revenue</CardTitle>
+                      <CardTitle className="text-sm font-medium">Monthly Performance</CardTitle>
                       <BarChart3 className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold text-green-600">₹3.7Cr</div>
+                      <div className="text-2xl font-bold text-green-600">97.8%</div>
                       <Progress value={89} className="h-2 mt-2" />
                       <p className="text-xs text-muted-foreground">+8.9% vs last month</p>
                     </CardContent>
@@ -2210,18 +2210,18 @@ function ClientDashboard() {
                     
                     <Card>
                       <CardHeader>
-                        <CardTitle>Revenue & Transaction Trends</CardTitle>
-                        <CardDescription>6-month business performance overview</CardDescription>
+                        <CardTitle>Performance & Transaction Trends</CardTitle>
+                        <CardDescription>6-month operational performance overview</CardDescription>
                       </CardHeader>
                       <CardContent>
                         <ResponsiveContainer width="100%" height={300}>
-                          <LineChart data={clientRevenueData}>
+                          <LineChart data={clientPerformanceData}>
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis dataKey="month" />
                             <YAxis />
                             <Tooltip />
                             <Legend />
-                            <Line type="monotone" dataKey="revenue" stroke="#22c55e" strokeWidth={3} name="Revenue (Cr)" />
+                            <Line type="monotone" dataKey="efficiency" stroke="#22c55e" strokeWidth={3} name="Efficiency %" />
                             <Line type="monotone" dataKey="transactions" stroke="#3b82f6" strokeWidth={3} name="Transactions (M)" />
                           </LineChart>
                         </ResponsiveContainer>
@@ -2240,8 +2240,8 @@ function ClientDashboard() {
                       <CardContent>
                         <div className="space-y-4">
                           <div className="flex justify-between">
-                            <span>Cost Savings</span>
-                            <span className="font-bold text-green-600">₹24.5L</span>
+                            <span>System Uptime</span>
+                            <span className="font-bold text-green-600">99.3%</span>
                           </div>
                           <div className="flex justify-between">
                             <span>Efficiency Gain</span>
@@ -2316,7 +2316,7 @@ function ClientDashboard() {
                     </CardHeader>
                     <CardContent>
                       <ResponsiveContainer width="100%" height={250}>
-                        <AreaChart data={clientRevenueData}>
+                        <AreaChart data={clientPerformanceData}>
                           <CartesianGrid strokeDasharray="3 3" />
                           <XAxis dataKey="month" />
                           <YAxis />
@@ -2394,7 +2394,7 @@ function ClientDashboard() {
                     <div className="flex flex-wrap gap-3">
                       <Button
                         onClick={() => {
-                          const businessData = clientRevenueData.map(data => ({
+                          const businessData = clientPerformanceData.map(data => ({
                             Month: data.month,
                             'Uptime %': data.uptime,
                             'Transactions (M)': data.transactions,
@@ -2413,7 +2413,7 @@ function ClientDashboard() {
                       </Button>
 
                       <CSVLink
-                        data={clientRevenueData.map(data => ({
+                        data={clientPerformanceData.map(data => ({
                           Month: data.month,
                           'Uptime %': data.uptime,
                           'Transactions (M)': data.transactions,
@@ -2433,8 +2433,8 @@ function ClientDashboard() {
                           doc.text('Business Performance Report', 20, 20);
                           doc.text('Executive Summary', 20, 35);
                           (doc as any).autoTable({
-                            head: [['Month', 'Revenue (Cr)', 'Transactions (M)', 'Efficiency (%)']],
-                            body: clientRevenueData.map(data => [
+                            head: [['Month', 'Efficiency %', 'Transactions (M)', 'Performance Score']],
+                            body: clientPerformanceData.map(data => [
                               data.month,
                               data.uptime.toFixed(1) + '%',
                               data.transactions.toFixed(1) + 'M',
@@ -2469,7 +2469,7 @@ function ClientDashboard() {
                     </CardHeader>
                     <CardContent>
                       <ResponsiveContainer width="100%" height={350}>
-                        <ComposedChart data={clientRevenueData}>
+                        <ComposedChart data={clientPerformanceData}>
                           <CartesianGrid strokeDasharray="3 3" />
                           <XAxis dataKey="month" />
                           <YAxis yAxisId="left" />
@@ -2531,7 +2531,7 @@ function ClientDashboard() {
                   </Card>
                 </div>
 
-                {/* Revenue & Performance Analysis */}
+                {/* Performance Analysis */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   <Card>
                     <CardHeader>
@@ -2542,7 +2542,7 @@ function ClientDashboard() {
                       <ResponsiveContainer width="100%" height={250}>
                         <PieChart>
                           <Pie
-                            data={clientRevenueData}
+                            data={clientPerformanceData}
                             cx="50%"
                             cy="50%"
                             outerRadius={80}
@@ -2550,7 +2550,7 @@ function ClientDashboard() {
                             dataKey="uptime"
                             label={({ month, percent }) => `${month} ${(percent * 100).toFixed(0)}%`}
                           >
-                            {clientRevenueData.map((entry, index) => (
+                            {clientPerformanceData.map((entry, index) => (
                               <Cell key={`cell-${index}`} fill={`hsl(${index * 60}, 70%, 50%)`} />
                             ))}
                           </Pie>
@@ -2567,7 +2567,7 @@ function ClientDashboard() {
                     </CardHeader>
                     <CardContent>
                       <ResponsiveContainer width="100%" height={250}>
-                        <AreaChart data={clientRevenueData}>
+                        <AreaChart data={clientPerformanceData}>
                           <CartesianGrid strokeDasharray="3 3" />
                           <XAxis dataKey="month" />
                           <YAxis />
@@ -2585,7 +2585,7 @@ function ClientDashboard() {
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div className="p-3 bg-green-50 dark:bg-green-950 rounded-lg">
-                        <div className="text-sm font-medium text-green-800 dark:text-green-200">Revenue Growth</div>
+                        <div className="text-sm font-medium text-green-800 dark:text-green-200">Performance Growth</div>
                         <div className="text-lg font-bold text-green-600">+8.9%</div>
                         <div className="text-xs text-green-600">vs last month</div>
                       </div>
@@ -2597,9 +2597,9 @@ function ClientDashboard() {
                       </div>
                       
                       <div className="p-3 bg-purple-50 dark:bg-purple-950 rounded-lg">
-                        <div className="text-sm font-medium text-purple-800 dark:text-purple-200">ROI</div>
-                        <div className="text-lg font-bold text-purple-600">124%</div>
-                        <div className="text-xs text-purple-600">Infrastructure investment</div>
+                        <div className="text-sm font-medium text-purple-800 dark:text-purple-200">Availability</div>
+                        <div className="text-lg font-bold text-purple-600">99.7%</div>
+                        <div className="text-xs text-purple-600">System availability</div>
                       </div>
                     </CardContent>
                   </Card>
@@ -2621,7 +2621,7 @@ function ClientDashboard() {
                           <thead className="bg-muted/50">
                             <tr className="border-b">
                               <th className="text-left p-3 font-medium">Period</th>
-                              <th className="text-right p-3 font-medium">Revenue (Cr)</th>
+                              <th className="text-right p-3 font-medium">Efficiency %</th>
                               <th className="text-right p-3 font-medium">Transactions (M)</th>
                               <th className="text-right p-3 font-medium">Efficiency (%)</th>
                               <th className="text-right p-3 font-medium">Growth Rate</th>
@@ -2629,8 +2629,8 @@ function ClientDashboard() {
                             </tr>
                           </thead>
                           <tbody>
-                            {clientRevenueData.map((data, index) => {
-                              const prevData = index > 0 ? clientRevenueData[index - 1] : null;
+                            {clientPerformanceData.map((data, index) => {
+                              const prevData = index > 0 ? clientPerformanceData[index - 1] : null;
                               const growthRate = prevData ? ((data.uptime - prevData.uptime) / prevData.uptime * 100) : 0;
                               
                               return (
