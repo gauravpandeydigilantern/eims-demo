@@ -162,6 +162,7 @@ const alertTrends = [
 function NECGeneralDashboard() {
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview');
   const isMobile = useIsMobile();
 
   const { data: systemStats } = useQuery({
@@ -193,6 +194,8 @@ function NECGeneralDashboard() {
           isOpen={sidebarOpen} 
           onClose={() => setSidebarOpen(false)}
           isMobile={isMobile}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
           data-testid="sidebar"
         />
         
@@ -224,7 +227,7 @@ function NECGeneralDashboard() {
 
           {/* Multi-tab Dashboard Content */}
           <div className="p-6">
-            <Tabs defaultValue="overview" className="space-y-6">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
               <TabsList className="grid grid-cols-6 lg:w-fit">
                 <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
                 <TabsTrigger value="performance" data-testid="tab-performance">Performance</TabsTrigger>
@@ -987,6 +990,7 @@ function NECEngineerDashboard() {
   const { user } = useAuth();
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('monitoring');
   const isMobile = useIsMobile();
 
   const { data: regionalStats } = useQuery({
@@ -1014,6 +1018,8 @@ function NECEngineerDashboard() {
           isOpen={sidebarOpen} 
           onClose={() => setSidebarOpen(false)}
           isMobile={isMobile}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
           data-testid="sidebar"
         />
         
@@ -1043,7 +1049,7 @@ function NECEngineerDashboard() {
           </div>
 
           <div className="p-6">
-            <Tabs defaultValue="monitoring" className="space-y-6">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
               <TabsList className="grid grid-cols-5 lg:w-fit">
                 <TabsTrigger value="monitoring" data-testid="tab-monitoring">Monitoring</TabsTrigger>
                 <TabsTrigger value="devices" data-testid="tab-devices">Devices</TabsTrigger>
@@ -1549,6 +1555,7 @@ const serviceMetrics = [
 function NECAdminDashboard() {
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('devices');
   const isMobile = useIsMobile();
 
   const { data: adminStats } = useQuery({
@@ -1576,6 +1583,8 @@ function NECAdminDashboard() {
           isOpen={sidebarOpen} 
           onClose={() => setSidebarOpen(false)}
           isMobile={isMobile}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
           data-testid="sidebar"
         />
         
@@ -1605,7 +1614,7 @@ function NECAdminDashboard() {
           </div>
 
           <div className="p-6">
-            <Tabs defaultValue="devices" className="space-y-6">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
               <TabsList className="grid grid-cols-5 lg:w-fit">
                 <TabsTrigger value="devices" data-testid="tab-devices">Device Management</TabsTrigger>
                 <TabsTrigger value="users" data-testid="tab-users">User Management</TabsTrigger>
@@ -1915,6 +1924,7 @@ function NECAdminDashboard() {
 // Client Dashboard - Read-only view
 function ClientDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview');
   const isMobile = useIsMobile();
 
   const { data: statusSummary } = useQuery({
@@ -1942,6 +1952,8 @@ function ClientDashboard() {
           isOpen={sidebarOpen} 
           onClose={() => setSidebarOpen(false)}
           isMobile={isMobile}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
           data-testid="sidebar"
         />
         
@@ -1971,7 +1983,7 @@ function ClientDashboard() {
           </div>
 
           <div className="p-6">
-            <Tabs defaultValue="overview" className="space-y-6">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
               <TabsList className="grid grid-cols-4 lg:w-fit">
                 <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
                 <TabsTrigger value="analytics" data-testid="tab-analytics">Analytics</TabsTrigger>

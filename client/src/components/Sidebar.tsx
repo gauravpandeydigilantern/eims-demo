@@ -7,12 +7,14 @@ interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
   isMobile: boolean;
+  activeTab?: string;
+  onTabChange?: (tab: string) => void;
 }
 
-export default function Sidebar({ isOpen, onClose, isMobile }: SidebarProps) {
+export default function Sidebar({ isOpen, onClose, isMobile, activeTab, onTabChange }: SidebarProps) {
   const { user } = useAuth();
   
-  const { data: alertsSummary } = useQuery({
+  const { data: alertsSummary } = useQuery<{ total: number; critical: number; warning: number; info: number }>({
     queryKey: ["/api/alerts/summary"],
     refetchInterval: 30 * 1000,
   });
@@ -20,10 +22,66 @@ export default function Sidebar({ isOpen, onClose, isMobile }: SidebarProps) {
   const canAccessUserManagement = user?.role === 'NEC_GENERAL' || user?.role === 'NEC_ADMIN';
   const canAccessAnalytics = user?.role !== 'CLIENT';
 
-  const handleLinkClick = () => {
-    if (isMobile) {
-      onClose();
+  // Map sidebar navigation to tab values based on user role
+  const getSidebarToTabMap = (): Record<string, string> => {
+    if (user?.role === 'NEC_GENERAL') {
+      return {
+        'overview': 'overview',
+        'device-map': 'overview', // Device map is in Overview tab
+        'alerts': 'alerts',
+        'analytics': 'analytics',
+        'reports': 'reports',
+        'ai-assistant': 'operations', // AI Assistant is in Operations tab
+        'user-management': 'operations', // User Management is in Operations tab  
+        'settings': 'operations' // Settings is in Operations tab
+      };
+    } else if (user?.role === 'NEC_ENGINEER') {
+      return {
+        'overview': 'monitoring',
+        'device-map': 'monitoring',
+        'alerts': 'monitoring', 
+        'analytics': 'analytics',
+        'reports': 'reports',
+        'ai-assistant': 'maintenance',
+        'user-management': 'monitoring',
+        'settings': 'monitoring'
+      };
+    } else if (user?.role === 'NEC_ADMIN') {
+      return {
+        'overview': 'devices',
+        'device-map': 'devices',
+        'alerts': 'devices',
+        'analytics': 'analytics',
+        'reports': 'reports',
+        'ai-assistant': 'devices',
+        'user-management': 'users',
+        'settings': 'configuration'
+      };
+    } else { // CLIENT
+      return {
+        'overview': 'overview',
+        'device-map': 'overview',
+        'alerts': 'overview',
+        'analytics': 'analytics',
+        'reports': 'reports',
+        'ai-assistant': 'overview',
+        'user-management': 'overview',
+        'settings': 'service'
+      };
     }
+  };
+
+  const handleLinkClick = (sidebarTab?: string) => {
+    return () => {
+      if (sidebarTab && onTabChange) {
+        const sidebarToTabMap = getSidebarToTabMap();
+        const tabValue = sidebarToTabMap[sidebarTab] || sidebarTab;
+        onTabChange(tabValue);
+      }
+      if (isMobile) {
+        onClose();
+      }
+    };
   };
 
   return (
@@ -47,8 +105,12 @@ export default function Sidebar({ isOpen, onClose, isMobile }: SidebarProps) {
         <div className="p-6">
           <nav className="space-y-2">
             <button 
-              className="flex items-center space-x-3 text-foreground bg-primary/10 rounded-lg px-3 py-2 font-medium w-full text-left"
-              onClick={handleLinkClick}
+              className={`flex items-center space-x-3 rounded-lg px-3 py-2 font-medium w-full text-left transition-colors ${
+                activeTab === 'overview' 
+                  ? 'text-foreground bg-primary/10' 
+                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+              }`}
+              onClick={handleLinkClick('overview')}
               data-testid="link-dashboard"
             >
               <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -59,8 +121,12 @@ export default function Sidebar({ isOpen, onClose, isMobile }: SidebarProps) {
             </button>
             
             <button 
-              className="flex items-center space-x-3 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg px-3 py-2 w-full text-left transition-colors"
-              onClick={handleLinkClick}
+              className={`flex items-center space-x-3 rounded-lg px-3 py-2 w-full text-left transition-colors ${
+                activeTab === 'overview' 
+                  ? 'text-foreground bg-primary/10' 
+                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+              }`}
+              onClick={handleLinkClick('device-map')}
               data-testid="link-device-map"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -71,8 +137,12 @@ export default function Sidebar({ isOpen, onClose, isMobile }: SidebarProps) {
             </button>
             
             <button 
-              className="flex items-center justify-between text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg px-3 py-2 w-full text-left transition-colors"
-              onClick={handleLinkClick}
+              className={`flex items-center justify-between rounded-lg px-3 py-2 w-full text-left transition-colors ${
+                activeTab === 'alerts' 
+                  ? 'text-foreground bg-primary/10' 
+                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+              }`}
+              onClick={handleLinkClick('alerts')}
               data-testid="link-alerts"
             >
               <div className="flex items-center space-x-3">
@@ -81,7 +151,7 @@ export default function Sidebar({ isOpen, onClose, isMobile }: SidebarProps) {
                 </svg>
                 <span>Alerts</span>
               </div>
-              {alertsSummary?.total > 0 && (
+              {alertsSummary?.total && alertsSummary.total > 0 && (
                 <Badge 
                   variant="destructive" 
                   className="text-xs"
@@ -94,8 +164,12 @@ export default function Sidebar({ isOpen, onClose, isMobile }: SidebarProps) {
             
             {canAccessAnalytics && (
               <button 
-                className="flex items-center space-x-3 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg px-3 py-2 w-full text-left transition-colors"
-                onClick={handleLinkClick}
+                className={`flex items-center space-x-3 rounded-lg px-3 py-2 w-full text-left transition-colors ${
+                  activeTab === 'analytics' 
+                    ? 'text-foreground bg-primary/10' 
+                    : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                }`}
+                onClick={handleLinkClick('analytics')}
                 data-testid="link-analytics"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -106,8 +180,12 @@ export default function Sidebar({ isOpen, onClose, isMobile }: SidebarProps) {
             )}
             
             <button 
-              className="flex items-center space-x-3 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg px-3 py-2 w-full text-left transition-colors"
-              onClick={handleLinkClick}
+              className={`flex items-center space-x-3 rounded-lg px-3 py-2 w-full text-left transition-colors ${
+                activeTab === 'reports' 
+                  ? 'text-foreground bg-primary/10' 
+                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+              }`}
+              onClick={handleLinkClick('reports')}
               data-testid="link-reports"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -117,8 +195,12 @@ export default function Sidebar({ isOpen, onClose, isMobile }: SidebarProps) {
             </button>
             
             <button 
-              className="flex items-center space-x-3 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg px-3 py-2 w-full text-left transition-colors"
-              onClick={handleLinkClick}
+              className={`flex items-center space-x-3 rounded-lg px-3 py-2 w-full text-left transition-colors ${
+                activeTab === 'operations' 
+                  ? 'text-foreground bg-primary/10' 
+                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+              }`}
+              onClick={handleLinkClick('ai-assistant')}
               data-testid="link-ai-assistant"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -129,8 +211,12 @@ export default function Sidebar({ isOpen, onClose, isMobile }: SidebarProps) {
             
             {canAccessUserManagement && (
               <button 
-                className="flex items-center space-x-3 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg px-3 py-2 w-full text-left transition-colors"
-                onClick={handleLinkClick}
+                className={`flex items-center space-x-3 rounded-lg px-3 py-2 w-full text-left transition-colors ${
+                  activeTab === 'operations' 
+                    ? 'text-foreground bg-primary/10' 
+                    : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                }`}
+                onClick={handleLinkClick('user-management')}
                 data-testid="link-user-management"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -141,8 +227,12 @@ export default function Sidebar({ isOpen, onClose, isMobile }: SidebarProps) {
             )}
             
             <button 
-              className="flex items-center space-x-3 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg px-3 py-2 w-full text-left transition-colors"
-              onClick={handleLinkClick}
+              className={`flex items-center space-x-3 rounded-lg px-3 py-2 w-full text-left transition-colors ${
+                activeTab === 'operations' 
+                  ? 'text-foreground bg-primary/10' 
+                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+              }`}
+              onClick={handleLinkClick('settings')}
               data-testid="link-settings"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
