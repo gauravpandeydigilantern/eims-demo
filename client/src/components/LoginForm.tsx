@@ -28,13 +28,7 @@ export function LoginForm({ onLoginSuccess }: LoginFormProps) {
 
   const loginMutation = useMutation({
     mutationFn: async (data: LoginInput) => {
-      return await apiRequest("/api/login", {
-        method: "POST",
-        body: JSON.stringify(data),
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      return await apiRequest("POST", "/api/login", data);
     },
     onSuccess: () => {
       setErrorMessage("");
