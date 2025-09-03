@@ -4,6 +4,17 @@ import type { InsertDevice, InsertDeviceMetrics, InsertAlert, InsertWeatherData 
 export async function seedDatabase() {
   console.log('Seeding database with EIMS data...');
 
+  // Check if devices already exist
+  try {
+    const existingDevices = await storage.getAllDevices();
+    if (existingDevices && existingDevices.length > 0) {
+      console.log(`Database already has ${existingDevices.length} devices. Skipping seeding.`);
+      return;
+    }
+  } catch (error) {
+    console.log('No existing devices found. Proceeding with seeding...');
+  }
+
   // Seed devices
   const devices = await seedDevices();
   console.log(`Seeded ${devices.length} devices`);

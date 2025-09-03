@@ -27,7 +27,6 @@ export default function Sidebar({ isOpen, onClose, isMobile, activeTab, onTabCha
     if (user?.role === 'NEC_GENERAL') {
       return {
         'overview': 'overview',
-        'device-map': 'overview', // Device map is in Overview tab
         'alerts': 'alerts',
         'analytics': 'analytics',
         'reports': 'reports',
@@ -38,7 +37,6 @@ export default function Sidebar({ isOpen, onClose, isMobile, activeTab, onTabCha
     } else if (user?.role === 'NEC_ENGINEER') {
       return {
         'overview': 'monitoring',
-        'device-map': 'monitoring',
         'alerts': 'monitoring', 
         'analytics': 'analytics',
         'reports': 'reports',
@@ -49,7 +47,6 @@ export default function Sidebar({ isOpen, onClose, isMobile, activeTab, onTabCha
     } else if (user?.role === 'NEC_ADMIN') {
       return {
         'overview': 'devices',
-        'device-map': 'devices',
         'alerts': 'devices',
         'analytics': 'analytics',
         'reports': 'logs',
@@ -60,7 +57,6 @@ export default function Sidebar({ isOpen, onClose, isMobile, activeTab, onTabCha
     } else { // CLIENT
       return {
         'overview': 'overview',
-        'device-map': 'overview',
         'alerts': 'overview',
         'analytics': 'analytics',
         'reports': 'reports',
@@ -126,22 +122,6 @@ export default function Sidebar({ isOpen, onClose, isMobile, activeTab, onTabCha
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5v6l3-3 3 3V5" />
               </svg>
               <span>Dashboard</span>
-            </button>
-            
-            <button 
-              className={`flex items-center space-x-3 rounded-lg px-3 py-2 w-full text-left transition-colors ${
-                isSidebarItemActive('device-map') 
-                  ? 'text-foreground bg-primary/10' 
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-              }`}
-              onClick={handleLinkClick('device-map')}
-              data-testid="link-device-map"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              <span>Device Map</span>
             </button>
             
             <button 

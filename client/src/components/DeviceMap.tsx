@@ -74,6 +74,11 @@ export default function DeviceMap({ onDeviceSelect }: DeviceMapProps) {
     }
   }, [devices, mapLoaded, showClusters]);
 
+  // Set up global function for device selection
+  useEffect(() => {
+    (window as any).selectDevice = onDeviceSelect;
+  }, [onDeviceSelect]);
+
   const initializeMap = () => {
     if (!mapRef.current || !window.L) return;
 
@@ -132,9 +137,6 @@ export default function DeviceMap({ onDeviceSelect }: DeviceMapProps) {
 
       markersRef.current.push(marker);
     });
-
-    // Global function for popup buttons
-    (window as any).selectDevice = onDeviceSelect;
   };
 
   const addClusteredMarkers = () => {
