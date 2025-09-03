@@ -193,6 +193,134 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Comprehensive analytics endpoint
+  app.get('/api/analytics/comprehensive', isAuthenticated, hasRegionalAccess, async (req: any, res) => {
+    try {
+      const user = req.user as User;
+      let devices = await storage.getAllDevices();
+      
+      // Apply regional restrictions for NEC_ENGINEER
+      if (user.role === 'NEC_ENGINEER' && user.region) {
+        devices = devices.filter(d => d.region === user.region);
+      }
+
+      const comprehensive = {
+        deviceStatus: await storage.getDeviceStatusSummary(),
+        regionalPerformance: await storage.getRegionalPerformance(),
+        vendorPerformance: await storage.getVendorPerformance(),
+        totalDevices: devices.length,
+        lastUpdated: new Date().toISOString()
+      };
+      
+      res.json(comprehensive);
+    } catch (error) {
+      console.error("Error fetching comprehensive analytics:", error);
+      res.status(500).json({ message: "Failed to fetch comprehensive analytics" });
+    }
+  });
+
+  // TAG Read Status Analytics
+  app.get('/api/analytics/tag-status/:timeFrame', isAuthenticated, hasRegionalAccess, async (req: any, res) => {
+    try {
+      const user = req.user as User;
+      const timeFrame = parseInt(req.params.timeFrame) || 12;
+      let devices = await storage.getAllDevices();
+      
+      // Apply regional restrictions for NEC_ENGINEER
+      if (user.role === 'NEC_ENGINEER' && user.region) {
+        devices = devices.filter(d => d.region === user.region);
+      }
+
+      // Mock TAG read status data - in production, this would query real TAG read logs
+      const now = new Date();
+      const oneDay = 24 * 60 * 60 * 1000;
+      const oneWeek = 7 * oneDay;
+      const oneMonth = 30 * oneDay;
+      const timeFrameMs = timeFrame * oneMonth;
+
+      const tagStatus = {
+        recent: Math.floor(devices.length * 0.65), // < 24h
+        weekOld: Math.floor(devices.length * 0.20), // 1-7 days
+        monthOld: Math.floor(devices.length * 0.10), // 1-4 weeks
+        old: Math.floor(devices.length * 0.03), // > timeFrame
+        none: Math.floor(devices.length * 0.02), // No reads
+        byRegion: devices.reduce((acc, device) => {
+          const region = device.region || 'Unknown';
+          if (!acc[region]) {
+            acc[region] = { recent: 0, weekOld: 0, monthOld: 0, old: 0 };
+          }
+          // Distribute randomly for demo
+          const rand = Math.random();
+          if (rand < 0.65) acc[region].recent++;
+          else if (rand < 0.85) acc[region].weekOld++;
+          else if (rand < 0.95) acc[region].monthOld++;
+          else acc[region].old++;
+          return acc;
+        }, {} as Record<string, any>),
+        timeFrame,
+        lastUpdated: now.toISOString()
+      };
+
+      res.json(tagStatus);
+    } catch (error) {
+      console.error("Error fetching TAG status:", error);
+      res.status(500).json({ message: "Failed to fetch TAG status" });
+    }
+  });
+
+  // Registration Status Analytics
+  app.get('/api/analytics/registration-status/:timeFrame', isAuthenticated, hasRegionalAccess, async (req: any, res) => {
+    try {
+      const user = req.user as User;
+      const timeFrame = parseInt(req.params.timeFrame) || 12;
+      let devices = await storage.getAllDevices();
+      
+      // Apply regional restrictions for NEC_ENGINEER
+      if (user.role === 'NEC_ENGINEER' && user.region) {
+        devices = devices.filter(d => d.region === user.region);
+      }
+
+      // Mock registration status data
+      const registrationStatus = {
+        success: Math.floor(devices.length * 0.85),
+        failed: Math.floor(devices.length * 0.08),
+        pending: Math.floor(devices.length * 0.05),
+        expired: Math.floor(devices.length * 0.02),
+        timeFrame,
+        lastUpdated: new Date().toISOString()
+      };
+
+      res.json(registrationStatus);
+    } catch (error) {
+      console.error("Error fetching registration status:", error);
+      res.status(500).json({ message: "Failed to fetch registration status" });
+    }
+  });
+
+  // TAG Read Trends
+  app.get('/api/analytics/tag-trends/:timeFrame', isAuthenticated, hasRegionalAccess, async (req: any, res) => {
+    try {
+      const timeFrame = parseInt(req.params.timeFrame) || 12;
+      
+      // Mock historical trends data
+      const trends = [];
+      for (let i = timeFrame; i >= 0; i--) {
+        const date = new Date();
+        date.setMonth(date.getMonth() - i);
+        trends.push({
+          month: date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+          recent: Math.floor(Math.random() * 100) + 50,
+          old: Math.floor(Math.random() * 30) + 10
+        });
+      }
+
+      res.json(trends);
+    } catch (error) {
+      console.error("Error fetching TAG trends:", error);
+      res.status(500).json({ message: "Failed to fetch TAG trends" });
+    }
+  });
+
   app.get('/api/analytics/system-overview', isAuthenticated, hasRole(['NEC_GENERAL', 'NEC_ADMIN']), async (req, res) => {
     try {
       const devices = await storage.getAllDevices();
@@ -483,6 +611,130 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching chat sessions:", error);
       res.status(500).json({ message: "Failed to fetch chat sessions" });
+    }
+  });
+
+  // AI Insights endpoint
+  app.get('/api/ai/insights', isAuthenticated, hasRole(['NEC_GENERAL', 'NEC_ENGINEER', 'NEC_ADMIN']), async (req: any, res) => {
+    try {
+      const user = req.user as User;
+      let devices = await storage.getAllDevices();
+      
+      // Apply regional restrictions for NEC_ENGINEER
+      if (user.role === 'NEC_ENGINEER' && user.region) {
+        devices = devices.filter(d => d.region === user.region);
+      }
+
+      // Generate AI-powered insights
+      const insights = [];
+      
+      // Performance prediction insight
+      const downDevices = devices.filter(d => d.status === 'DOWN').length;
+      if (downDevices > 10) {
+        insights.push({
+          type: 'prediction',
+          title: 'High Device Failure Rate Detected',
+          description: `${downDevices} devices are currently down. Predictive analysis suggests potential network issues.`,
+          priority: downDevices > 50 ? 'critical' : 'high',
+          region: user.region || 'System-wide'
+        });
+      }
+
+      // Weather impact insight
+      const alerts = await weatherService.getWeatherAlerts();
+      if (alerts && alerts.length > 0) {
+        insights.push({
+          type: 'weather',
+          title: 'Weather Impact Alert',
+          description: 'Severe weather conditions may affect device performance in multiple regions.',
+          priority: 'medium',
+          region: 'Multi-regional'
+        });
+      }
+
+      // Optimization recommendation
+      const maintenanceDevices = devices.filter(d => d.status === 'MAINTENANCE').length;
+      if (maintenanceDevices > 20) {
+        insights.push({
+          type: 'optimization',
+          title: 'Scheduled Maintenance Optimization',
+          description: 'Consider batching maintenance operations to reduce system downtime.',
+          priority: 'low',
+          region: user.region || 'System-wide'
+        });
+      }
+
+      res.json(insights);
+    } catch (error) {
+      console.error("Error fetching AI insights:", error);
+      res.status(500).json({ message: "Failed to fetch AI insights" });
+    }
+  });
+
+  // Regional weather data endpoint
+  app.get('/api/weather/regional', isAuthenticated, hasRole(['NEC_GENERAL', 'NEC_ENGINEER', 'NEC_ADMIN', 'CLIENT']), async (req: any, res) => {
+    try {
+      const user = req.user as User;
+      
+      // Mock regional weather data
+      const regionalWeather = {
+        'Mumbai': {
+          condition: 'cloudy',
+          temperature: 28,
+          humidity: 78,
+          windSpeed: 12,
+          lastUpdated: new Date().toISOString()
+        },
+        'Delhi': {
+          condition: 'sunny', 
+          temperature: 32,
+          humidity: 45,
+          windSpeed: 8,
+          lastUpdated: new Date().toISOString()
+        },
+        'Bangalore': {
+          condition: 'rainy',
+          temperature: 24,
+          humidity: 85,
+          windSpeed: 15,
+          lastUpdated: new Date().toISOString()
+        },
+        'Chennai': {
+          condition: 'sunny',
+          temperature: 35,
+          humidity: 70,
+          windSpeed: 6,
+          lastUpdated: new Date().toISOString()
+        },
+        'Kolkata': {
+          condition: 'cloudy',
+          temperature: 30,
+          humidity: 82,
+          windSpeed: 10,
+          lastUpdated: new Date().toISOString()
+        },
+        'Hyderabad': {
+          condition: 'sunny',
+          temperature: 33,
+          humidity: 55,
+          windSpeed: 7,
+          lastUpdated: new Date().toISOString()
+        }
+      };
+
+      // Filter by region for NEC_ENGINEER
+      if (user.role === 'NEC_ENGINEER' && user.region) {
+        const filtered = {} as any;
+        if (regionalWeather[user.region as keyof typeof regionalWeather]) {
+          filtered[user.region] = regionalWeather[user.region as keyof typeof regionalWeather];
+        }
+        res.json(filtered);
+      } else {
+        res.json(regionalWeather);
+      }
+    } catch (error) {
+      console.error("Error fetching regional weather:", error);
+      res.status(500).json({ message: "Failed to fetch regional weather" });
     }
   });
 

@@ -2,18 +2,15 @@ import { useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import NavigationHeader from "./NavigationHeader";
 import Sidebar from "./Sidebar";
-import StatusMetrics from "./StatusMetrics";
-import DeviceMap from "./DeviceMap";
-import DeviceListTable from "./DeviceListTable";
-import AlertsPanel from "./AlertsPanel";
-import AIAssistant from "./AIAssistant";
-import WeatherPanel from "./WeatherPanel";
+import RoleSpecificDashboard from "./RoleSpecificDashboard";
 import DeviceDetailModal from "./DeviceDetailModal";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
   const isMobile = useIsMobile();
+  const { user } = useAuth();
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
   const closeSidebar = () => setSidebarOpen(false);
@@ -46,8 +43,20 @@ export default function Dashboard() {
           <div className="bg-card border-b border-border p-6" data-testid="dashboard-header">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between space-y-4 lg:space-y-0">
               <div>
-                <h2 className="text-3xl font-bold tracking-tight">Device Status Dashboard</h2>
-                <p className="text-muted-foreground">Real-time monitoring of RFID devices across toll plazas</p>
+                <h2 className="text-3xl font-bold tracking-tight">
+                  {user?.role === 'NEC_GENERAL' ? 'Executive Control Center' :
+                   user?.role === 'NEC_ENGINEER' ? 'Regional Engineering Dashboard' :
+                   user?.role === 'NEC_ADMIN' ? 'Device Management Center' :
+                   user?.role === 'CLIENT' ? 'Client Dashboard' :
+                   'Device Status Dashboard'}
+                </h2>
+                <p className="text-muted-foreground">
+                  {user?.role === 'NEC_GENERAL' ? 'Complete system authority and oversight' :
+                   user?.role === 'NEC_ENGINEER' ? `Regional operations management${user.region ? ` - ${user.region}` : ''}` :
+                   user?.role === 'NEC_ADMIN' ? 'Advanced device control and configuration' :
+                   user?.role === 'CLIENT' ? 'Real-time device status monitoring' :
+                   'Real-time monitoring of RFID devices across toll plazas'}
+                </p>
               </div>
               
               <div className="flex items-center space-x-3">
@@ -73,27 +82,8 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="p-6 space-y-6">
-            <StatusMetrics data-testid="status-metrics" />
-            
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-              <div className="xl:col-span-2 space-y-6">
-                <DeviceMap 
-                  onDeviceSelect={openDeviceDetail}
-                  data-testid="device-map"
-                />
-                <DeviceListTable 
-                  onDeviceSelect={openDeviceDetail}
-                  data-testid="device-list-table"
-                />
-              </div>
-              
-              <div className="space-y-6">
-                <AlertsPanel data-testid="alerts-panel" />
-                <AIAssistant data-testid="ai-assistant" />
-                <WeatherPanel data-testid="weather-panel" />
-              </div>
-            </div>
+          <div className="p-6">
+            <RoleSpecificDashboard onDeviceSelect={openDeviceDetail} />
           </div>
         </main>
       </div>

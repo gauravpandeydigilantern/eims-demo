@@ -157,62 +157,101 @@ export default function WeatherPanel() {
         </CardContent>
       </Card>
 
-      {/* Weather & Environmental Monitoring */}
+      {/* Enhanced Weather Intelligence */}
       <Card>
         <div className="p-6 border-b border-border">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-foreground">Weather Monitoring</h3>
-            <Button variant="ghost" size="sm" data-testid="button-expand-weather">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-              </svg>
-            </Button>
+            <h3 className="text-lg font-semibold text-foreground">Weather Intelligence</h3>
+            {activeWeatherAlerts.length > 0 && (
+              <Badge variant="destructive">{activeWeatherAlerts.length} Alerts</Badge>
+            )}
           </div>
         </div>
         
         <CardContent className="p-6 space-y-4">
-          {/* Current Conditions */}
+          {/* Critical Weather Alerts */}
+          {activeWeatherAlerts.length > 0 && (
+            <div className="space-y-3">
+              <h4 className="font-medium text-foreground flex items-center">
+                <svg className="w-4 h-4 mr-2 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.864-.833-2.634 0L4.232 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+                Active Weather Alerts
+              </h4>
+              {activeWeatherAlerts.map((alert: any, index: number) => (
+                <div 
+                  key={index}
+                  className={`border rounded-lg p-3 ${getAlertSeverityColor(alert.severity)}`}
+                  data-testid={`weather-alert-${index}`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2 mb-1">
+                        <span className="text-sm font-medium">{alert.type}</span>
+                        <Badge variant="outline" className="text-xs">
+                          {alert.severity?.toUpperCase()}
+                        </Badge>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {alert.description}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        📍 {alert.region}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Regional Weather Conditions */}
           <div>
-            <h4 className="font-medium text-foreground mb-3">Current Conditions</h4>
-            <div className="space-y-2">
-              {latestWeatherData.slice(0, 3).map((weather: any) => (
-                <div key={weather.region} className="flex items-center justify-between">
-                  <span className="text-muted-foreground text-sm" data-testid={`weather-city-${weather.city}`}>
-                    {weather.city}
-                  </span>
-                  <div className="flex items-center space-x-2">
-                    {getWeatherIcon(weather.condition)}
-                    <span className="text-sm" data-testid={`weather-temp-${weather.city}`}>
-                      {weather.temperature ? `${parseFloat(weather.temperature).toFixed(0)}°C` : 'N/A'}
+            <h4 className="font-medium text-foreground mb-3">Regional Conditions</h4>
+            <div className="grid grid-cols-2 gap-3">
+              {latestWeatherData.slice(0, 4).map((weather: any) => (
+                <div key={weather.region} className="bg-muted/50 rounded-lg p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium" data-testid={`weather-city-${weather.city}`}>
+                      {weather.city}
                     </span>
+                    {getWeatherIcon(weather.condition)}
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span>Temperature:</span>
+                      <span className="font-medium" data-testid={`weather-temp-${weather.city}`}>
+                        {weather.temperature ? `${parseFloat(weather.temperature).toFixed(0)}°C` : 'N/A'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span>Humidity:</span>
+                      <span className="font-medium">{weather.humidity || 'N/A'}%</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span>Wind:</span>
+                      <span className="font-medium">{weather.windSpeed || 'N/A'} km/h</span>
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Weather Alerts */}
+          {/* Proactive Weather Recommendations */}
           {activeWeatherAlerts.length > 0 && (
-            <div>
-              <h4 className="font-medium text-foreground mb-3">Weather Alerts</h4>
-              <div className="space-y-2">
-                {activeWeatherAlerts.map((alert: any, index: number) => (
-                  <div 
-                    key={index}
-                    className={`border rounded-lg p-3 ${getAlertSeverityColor(alert.severity)}`}
-                    data-testid={`weather-alert-${index}`}
-                  >
-                    <div className="flex items-center space-x-2">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.864-.833-2.634 0L4.232 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                      </svg>
-                      <span className="text-sm font-medium">{alert.type}</span>
-                    </div>
-                    <div className="text-xs mt-1">
-                      {alert.region} - {alert.description}
-                    </div>
-                  </div>
-                ))}
+            <div className="bg-blue-50 dark:bg-blue-950 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+              <h4 className="font-medium text-blue-800 dark:text-blue-200 mb-2 flex items-center">
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+                Recommended Actions
+              </h4>
+              <div className="space-y-2 text-sm text-blue-700 dark:text-blue-300">
+                <div>🔧 Monitor device performance closely</div>
+                <div>⚡ Activate backup power systems</div>
+                <div>📡 Check communication systems</div>
+                <div>👥 Alert regional maintenance teams</div>
               </div>
             </div>
           )}
@@ -221,32 +260,40 @@ export default function WeatherPanel() {
           {Array.isArray(devicesAtRisk) && devicesAtRisk.length > 0 && (
             <div>
               <h4 className="font-medium text-foreground mb-3">Environmental Impact</h4>
-              <div className="space-y-2">
+              <div className="grid grid-cols-3 gap-4">
                 {devicesAtRisk.slice(0, 1).map((risk: any) => (
-                  <div key={risk.region} className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Devices at Risk</span>
-                      <span className="font-medium text-warning" data-testid="text-devices-at-risk">
+                  <div key={risk.region} className="space-y-3">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-warning" data-testid="text-devices-at-risk">
                         {risk.devicesAtRisk}
-                      </span>
+                      </div>
+                      <div className="text-xs text-muted-foreground">Devices at Risk</div>
                     </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Protection Activated</span>
-                      <span className="font-medium text-success" data-testid="text-protection-activated">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-success" data-testid="text-protection-activated">
                         {risk.protectionActivated}
-                      </span>
+                      </div>
+                      <div className="text-xs text-muted-foreground">Protected</div>
                     </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Alerts Generated</span>
-                      <span className="font-medium text-info" data-testid="text-alerts-generated">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-info" data-testid="text-alerts-generated">
                         {risk.alertsGenerated}
-                      </span>
+                      </div>
+                      <div className="text-xs text-muted-foreground">Alerts</div>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
           )}
+
+          {/* Weather Dashboard Link */}
+          <Button variant="outline" className="w-full" data-testid="button-expand-weather">
+            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+            </svg>
+            View Full Weather Dashboard
+          </Button>
         </CardContent>
       </Card>
     </div>
