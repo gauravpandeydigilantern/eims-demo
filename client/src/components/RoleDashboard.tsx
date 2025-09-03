@@ -17,6 +17,7 @@ import NLDSDeviceTable from "./NLDSDeviceTable";
 import EnhancedDeviceDataView from "./EnhancedDeviceDataView";
 import RoleSpecificStats from "./RoleSpecificStats";
 import AdminActivityTracker from "./AdminActivityTracker";
+import ProjectLevelAnalytics from "./ProjectLevelAnalytics";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -236,8 +237,9 @@ function NECGeneralDashboard() {
           {/* Multi-tab Dashboard Content */}
           <div className="p-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-              <TabsList className={`grid ${user?.role === 'NEC_GENERAL' || user?.role === 'NEC_ADMIN' ? 'grid-cols-8' : 'grid-cols-7'} lg:w-fit`}>
+              <TabsList className={`grid ${user?.role === 'NEC_GENERAL' || user?.role === 'NEC_ADMIN' ? 'grid-cols-9' : 'grid-cols-8'} lg:w-fit`}>
                 <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
+                <TabsTrigger value="project-analytics" data-testid="tab-project-analytics">Project Analytics</TabsTrigger>
                 <TabsTrigger value="data" data-testid="tab-data">Data View</TabsTrigger>
                 <TabsTrigger value="performance" data-testid="tab-performance">Performance</TabsTrigger>
                 <TabsTrigger value="analytics" data-testid="tab-analytics">Analytics</TabsTrigger>
@@ -261,6 +263,11 @@ function NECGeneralDashboard() {
                 <WeeklyHealthProgress />
                 
                 <NLDSDeviceTable />
+              </TabsContent>
+
+              {/* Project Analytics Tab - New Enhanced Analytics */}
+              <TabsContent value="project-analytics" className="space-y-6">
+                <ProjectLevelAnalytics />
               </TabsContent>
 
               {/* Data View Tab - Advanced Filtering */}
@@ -2713,7 +2720,7 @@ function UserManagementInterface() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {users?.map((user: any) => (
+            {Array.isArray(users) && users.map((user: any) => (
               <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
                 <div className="flex items-center space-x-4">
                   <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
