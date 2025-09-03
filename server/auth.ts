@@ -148,6 +148,21 @@ export const hasRegionalAccess = (req: any, res: any, next: any) => {
   return res.status(403).json({ message: "Insufficient permissions" });
 };
 
+// Admin-only access middleware
+export const hasAdminAccess = (req: any, res: any, next: any) => {
+  if (!req.user) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  const user = req.user as User;
+  
+  if (user.role !== 'NEC_GENERAL' && user.role !== 'NEC_ADMIN') {
+    return res.status(403).json({ message: "Access denied. Admin privileges required." });
+  }
+  
+  next();
+};
+
 // Hash password utility
 export const hashPassword = async (password: string): Promise<string> => {
   return await bcrypt.hash(password, SALT_ROUNDS);

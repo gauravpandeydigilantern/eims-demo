@@ -15,6 +15,8 @@ import LastTagReadStatus from "./LastTagReadStatus";
 import WeeklyHealthProgress from "./WeeklyHealthProgress";
 import NLDSDeviceTable from "./NLDSDeviceTable";
 import EnhancedDeviceDataView from "./EnhancedDeviceDataView";
+import RoleSpecificStats from "./RoleSpecificStats";
+import AdminActivityTracker from "./AdminActivityTracker";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -233,7 +235,7 @@ function NECGeneralDashboard() {
           {/* Multi-tab Dashboard Content */}
           <div className="p-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-              <TabsList className="grid grid-cols-7 lg:w-fit">
+              <TabsList className={`grid ${user?.role === 'NEC_GENERAL' || user?.role === 'NEC_ADMIN' ? 'grid-cols-8' : 'grid-cols-7'} lg:w-fit`}>
                 <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
                 <TabsTrigger value="data" data-testid="tab-data">Data View</TabsTrigger>
                 <TabsTrigger value="performance" data-testid="tab-performance">Performance</TabsTrigger>
@@ -241,11 +243,14 @@ function NECGeneralDashboard() {
                 <TabsTrigger value="alerts" data-testid="tab-alerts">Alerts</TabsTrigger>
                 <TabsTrigger value="operations" data-testid="tab-operations">Operations</TabsTrigger>
                 <TabsTrigger value="reports" data-testid="tab-reports">Reports</TabsTrigger>
+                {(user?.role === 'NEC_GENERAL' || user?.role === 'NEC_ADMIN') && (
+                  <TabsTrigger value="activity" data-testid="tab-activity">Activity</TabsTrigger>
+                )}
               </TabsList>
 
               {/* Overview Tab - NLDS Style */}
               <TabsContent value="overview" className="space-y-6">
-                <StatusMetrics />
+                <RoleSpecificStats />
                 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <LocationWiseDeviceStatus />
@@ -1051,6 +1056,13 @@ function NECGeneralDashboard() {
                   </Card>
                 </div>
               </TabsContent>
+
+              {/* Activity Tab - Admin Only */}
+              {(user?.role === 'NEC_GENERAL' || user?.role === 'NEC_ADMIN') && (
+                <TabsContent value="activity" className="space-y-6">
+                  <AdminActivityTracker />
+                </TabsContent>
+              )}
             </Tabs>
           </div>
         </main>

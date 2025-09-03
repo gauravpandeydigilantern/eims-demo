@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import passport from "passport";
-import { setupAuth, isAuthenticated, hasRole, hasRegionalAccess } from "./auth";
+import { setupAuth, isAuthenticated, hasRole, hasRegionalAccess, hasAdminAccess } from "./auth";
 import { loginSchema, type User } from "@shared/schema";
 import { deviceService } from "./services/deviceService";
 import { alertService } from "./services/alertService";
@@ -129,6 +129,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching device metrics:", error);
       res.status(500).json({ message: "Failed to fetch device metrics" });
+    }
+  });
+
+  // Role-specific statistics endpoint
+  app.get('/api/role-stats', isAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user as User;
+      const stats = await storage.getRoleSpecificStats(user.role);
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching role stats:", error);
+      res.status(500).json({ message: "Failed to fetch role statistics" });
+    }
+  });
+
+  // Weather impact endpoint
+  app.get('/api/weather-impact', isAuthenticated, async (req: any, res) => {
+    try {
+      const weatherImpact = await storage.getWeatherImpact();
+      res.json(weatherImpact);
+    } catch (error) {
+      console.error("Error fetching weather impact:", error);
+      res.status(500).json({ message: "Failed to fetch weather impact data" });
+    }
+  });
+
+  // Admin login activities endpoint
+  app.get('/api/admin/login-activities', isAuthenticated, hasAdminAccess, async (req: any, res) => {
+    try {
+      const { timeFilter, statusFilter } = req.query;
+      const activities = await storage.getLoginActivities(timeFilter as string, statusFilter as string);
+      res.json(activities);
+    } catch (error) {
+      console.error("Error fetching login activities:", error);
+      res.status(500).json({ message: "Failed to fetch login activities" });
+    }
+  });
+
+  // Admin user actions endpoint
+  app.get('/api/admin/user-actions', isAuthenticated, hasAdminAccess, async (req: any, res) => {
+    try {
+      const { timeFilter } = req.query;
+      const actions = await storage.getUserActions(timeFilter as string);
+      res.json(actions);
+    } catch (error) {
+      console.error("Error fetching user actions:", error);
+      res.status(500).json({ message: "Failed to fetch user actions" });
+    }
+  });
+
+  // Admin activity statistics endpoint
+  app.get('/api/admin/activity-stats', isAuthenticated, hasAdminAccess, async (req: any, res) => {
+    try {
+      const stats = await storage.getActivityStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching activity stats:", error);
+      res.status(500).json({ message: "Failed to fetch activity statistics" });
     }
   });
 
