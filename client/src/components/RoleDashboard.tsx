@@ -20,9 +20,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Shield, MapPin, Users, Settings, Eye, Monitor, AlertTriangle, BarChart3, Activity, TrendingUp, Database, Zap, Cpu, Thermometer, Wifi, Battery, Globe, Download, FileText, Table, Calendar, Filter, Search } from "lucide-react";
+import { Shield, MapPin, Users, Settings, Eye, Monitor, AlertTriangle, BarChart3, Activity, TrendingUp, Database, Zap, Cpu, Thermometer, Wifi, Battery, Globe, Download, FileText, Table, Calendar, Filter, Search, Edit, Trash2 } from "lucide-react";
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area, ComposedChart } from "recharts";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -1847,75 +1847,7 @@ function NECAdminDashboard() {
               </TabsContent>
 
               <TabsContent value="users" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>User Activity Overview</CardTitle>
-                    <CardDescription>Active users and access patterns by role</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {userActivityData.map((roleData, index) => (
-                        <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                          <div className="flex items-center gap-3">
-                            <Badge variant="outline">{roleData.role}</Badge>
-                            <div>
-                              <div className="font-medium">{roleData.active}/{roleData.total} Active</div>
-                              <div className="text-sm text-muted-foreground">Last login: {roleData.lastLogin}</div>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-sm font-medium">{((roleData.active / roleData.total) * 100).toFixed(1)}%</div>
-                            <Progress value={(roleData.active / roleData.total) * 100} className="h-1 w-20" />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>User Management Actions</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <Button className="w-full justify-start" variant="outline" data-testid="button-add-user">
-                        <Users className="w-4 h-4 mr-2" />
-                        Add New User
-                      </Button>
-                      <Button className="w-full justify-start" variant="outline" data-testid="button-manage-roles">
-                        <Shield className="w-4 h-4 mr-2" />
-                        Manage Roles
-                      </Button>
-                      <Button className="w-full justify-start" variant="outline" data-testid="button-audit-logs">
-                        <Activity className="w-4 h-4 mr-2" />
-                        View Audit Logs
-                      </Button>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Recent User Activity</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span>engineer@nec.com logged in</span>
-                          <span className="text-muted-foreground">15m ago</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>admin@nec.com updated config</span>
-                          <span className="text-muted-foreground">1h ago</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>general@nec.com emergency reset</span>
-                          <span className="text-muted-foreground">2h ago</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
+                <UserManagementInterface />
               </TabsContent>
 
               <TabsContent value="configuration" className="space-y-6">
@@ -2074,6 +2006,7 @@ function NECAdminDashboard() {
 
 // Client Dashboard - Read-only view
 function ClientDashboard() {
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const isMobile = useIsMobile();
@@ -2709,6 +2642,331 @@ function ClientDashboard() {
           </div>
         </main>
       </div>
+
+      {selectedDeviceId && (
+        <DeviceDetailModal
+          deviceId={selectedDeviceId}
+          onClose={() => setSelectedDeviceId(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+// User Management Interface Component
+function UserManagementInterface() {
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editingUser, setEditingUser] = useState<any>(null);
+  const [newUser, setNewUser] = useState({
+    email: '',
+    firstName: '',
+    lastName: '',
+    role: 'CLIENT',
+    region: '',
+    password: ''
+  });
+
+  const { data: users, refetch: refetchUsers } = useQuery({
+    queryKey: ['/api/users'],
+  });
+
+  const createUserMutation = useMutation({
+    mutationFn: async (userData: any) => {
+      return await apiRequest('POST', '/api/users', userData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      setShowCreateModal(false);
+      setNewUser({ email: '', firstName: '', lastName: '', role: 'CLIENT', region: '', password: '' });
+    },
+  });
+
+  const updateUserMutation = useMutation({
+    mutationFn: async ({ id, userData }: { id: string, userData: any }) => {
+      return await apiRequest('PUT', `/api/users/${id}`, userData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      setEditingUser(null);
+    },
+  });
+
+  const deleteUserMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return await apiRequest('DELETE', `/api/users/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+    },
+  });
+
+  const handleCreateUser = () => {
+    if (newUser.email && newUser.firstName && newUser.lastName && newUser.password) {
+      createUserMutation.mutate(newUser);
+    }
+  };
+
+  const handleUpdateUser = () => {
+    if (editingUser) {
+      updateUserMutation.mutate({ 
+        id: editingUser.id, 
+        userData: {
+          firstName: editingUser.firstName,
+          lastName: editingUser.lastName,
+          role: editingUser.role,
+          region: editingUser.role === 'NEC_ENGINEER' ? editingUser.region : null,
+          isActive: editingUser.isActive
+        }
+      });
+    }
+  };
+
+  const handleDeleteUser = (userId: string) => {
+    if (confirm('Are you sure you want to delete this user?')) {
+      deleteUserMutation.mutate(userId);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h3 className="text-2xl font-bold tracking-tight">User Management</h3>
+          <p className="text-muted-foreground">Manage user accounts and permissions</p>
+        </div>
+        <Button onClick={() => setShowCreateModal(true)} data-testid="button-create-user">
+          <Users className="w-4 h-4 mr-2" />
+          Add New User
+        </Button>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>System Users</CardTitle>
+          <CardDescription>Manage user accounts, roles, and permissions</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {users?.map((user: any) => (
+              <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="flex items-center space-x-4">
+                  <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                    <Users className="w-5 h-5 text-gray-600" />
+                  </div>
+                  <div>
+                    <div className="font-medium">{user.firstName} {user.lastName}</div>
+                    <div className="text-sm text-muted-foreground">{user.email}</div>
+                    <div className="flex items-center space-x-2 mt-1">
+                      <Badge variant="outline">{user.role}</Badge>
+                      {user.region && <Badge variant="secondary">{user.region}</Badge>}
+                      <Badge variant={user.isActive !== false ? "default" : "destructive"}>
+                        {user.isActive !== false ? "Active" : "Inactive"}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setEditingUser(user)}
+                    data-testid={`button-edit-user-${user.id}`}
+                  >
+                    <Edit className="w-4 h-4" />
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => handleDeleteUser(user.id)}
+                    className="text-red-600 hover:text-red-700"
+                    data-testid={`button-delete-user-${user.id}`}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Create User Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold mb-4">Create New User</h3>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">First Name</label>
+                  <input
+                    type="text"
+                    className="w-full border rounded-md px-3 py-2"
+                    value={newUser.firstName}
+                    onChange={(e) => setNewUser({ ...newUser, firstName: e.target.value })}
+                    data-testid="input-first-name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Last Name</label>
+                  <input
+                    type="text"
+                    className="w-full border rounded-md px-3 py-2"
+                    value={newUser.lastName}
+                    onChange={(e) => setNewUser({ ...newUser, lastName: e.target.value })}
+                    data-testid="input-last-name"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Email</label>
+                <input
+                  type="email"
+                  className="w-full border rounded-md px-3 py-2"
+                  value={newUser.email}
+                  onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                  data-testid="input-email"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Password</label>
+                <input
+                  type="password"
+                  className="w-full border rounded-md px-3 py-2"
+                  value={newUser.password}
+                  onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                  data-testid="input-password"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Role</label>
+                <select
+                  className="w-full border rounded-md px-3 py-2"
+                  value={newUser.role}
+                  onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
+                  data-testid="select-role"
+                >
+                  <option value="CLIENT">Client</option>
+                  <option value="NEC_ENGINEER">NEC Engineer</option>
+                  <option value="NEC_ADMIN">NEC Admin</option>
+                  <option value="NEC_GENERAL">NEC General</option>
+                </select>
+              </div>
+              {newUser.role === 'NEC_ENGINEER' && (
+                <div>
+                  <label className="block text-sm font-medium mb-1">Region</label>
+                  <select
+                    className="w-full border rounded-md px-3 py-2"
+                    value={newUser.region}
+                    onChange={(e) => setNewUser({ ...newUser, region: e.target.value })}
+                    data-testid="select-region"
+                  >
+                    <option value="">Select Region</option>
+                    <option value="Maharashtra">Maharashtra</option>
+                    <option value="Karnataka">Karnataka</option>
+                    <option value="Tamil Nadu">Tamil Nadu</option>
+                    <option value="Gujarat">Gujarat</option>
+                    <option value="Rajasthan">Rajasthan</option>
+                    <option value="West Bengal">West Bengal</option>
+                  </select>
+                </div>
+              )}
+            </div>
+            <div className="flex justify-end space-x-3 mt-6">
+              <Button variant="outline" onClick={() => setShowCreateModal(false)} data-testid="button-cancel-create">
+                Cancel
+              </Button>
+              <Button onClick={handleCreateUser} disabled={createUserMutation.isPending} data-testid="button-save-user">
+                {createUserMutation.isPending ? 'Creating...' : 'Create User'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit User Modal */}
+      {editingUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold mb-4">Edit User</h3>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">First Name</label>
+                  <input
+                    type="text"
+                    className="w-full border rounded-md px-3 py-2"
+                    value={editingUser.firstName}
+                    onChange={(e) => setEditingUser({ ...editingUser, firstName: e.target.value })}
+                    data-testid="input-edit-first-name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Last Name</label>
+                  <input
+                    type="text"
+                    className="w-full border rounded-md px-3 py-2"
+                    value={editingUser.lastName}
+                    onChange={(e) => setEditingUser({ ...editingUser, lastName: e.target.value })}
+                    data-testid="input-edit-last-name"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Role</label>
+                <select
+                  className="w-full border rounded-md px-3 py-2"
+                  value={editingUser.role}
+                  onChange={(e) => setEditingUser({ ...editingUser, role: e.target.value })}
+                  data-testid="select-edit-role"
+                >
+                  <option value="CLIENT">Client</option>
+                  <option value="NEC_ENGINEER">NEC Engineer</option>
+                  <option value="NEC_ADMIN">NEC Admin</option>
+                  <option value="NEC_GENERAL">NEC General</option>
+                </select>
+              </div>
+              {editingUser.role === 'NEC_ENGINEER' && (
+                <div>
+                  <label className="block text-sm font-medium mb-1">Region</label>
+                  <select
+                    className="w-full border rounded-md px-3 py-2"
+                    value={editingUser.region || ''}
+                    onChange={(e) => setEditingUser({ ...editingUser, region: e.target.value })}
+                    data-testid="select-edit-region"
+                  >
+                    <option value="">Select Region</option>
+                    <option value="Maharashtra">Maharashtra</option>
+                    <option value="Karnataka">Karnataka</option>
+                    <option value="Tamil Nadu">Tamil Nadu</option>
+                    <option value="Gujarat">Gujarat</option>
+                    <option value="Rajasthan">Rajasthan</option>
+                    <option value="West Bengal">West Bengal</option>
+                  </select>
+                </div>
+              )}
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="isActive"
+                  checked={editingUser.isActive !== false}
+                  onChange={(e) => setEditingUser({ ...editingUser, isActive: e.target.checked })}
+                  data-testid="checkbox-active"
+                />
+                <label htmlFor="isActive" className="text-sm font-medium">Active Account</label>
+              </div>
+            </div>
+            <div className="flex justify-end space-x-3 mt-6">
+              <Button variant="outline" onClick={() => setEditingUser(null)} data-testid="button-cancel-edit">
+                Cancel
+              </Button>
+              <Button onClick={handleUpdateUser} disabled={updateUserMutation.isPending} data-testid="button-update-user">
+                {updateUserMutation.isPending ? 'Updating...' : 'Update User'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

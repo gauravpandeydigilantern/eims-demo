@@ -351,6 +351,119 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // User Management routes (Admin only)
+  app.get('/api/users', isAuthenticated, hasRole(['NEC_GENERAL', 'NEC_ADMIN']), async (req: any, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      // Don't return password hashes
+      const safeUsers = users.map(user => ({
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+        region: user.region,
+        isActive: user.isActive,
+        lastLogin: user.lastLogin,
+        createdAt: user.createdAt
+      }));
+      res.json(safeUsers);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      res.status(500).json({ message: 'Failed to fetch users' });
+    }
+  });
+
+  app.post('/api/users', isAuthenticated, hasRole(['NEC_GENERAL', 'NEC_ADMIN']), async (req: any, res) => {
+    try {
+      const { email, firstName, lastName, role, region, password } = req.body;
+      
+      // Validate required fields
+      if (!email || !firstName || !lastName || !role || !password) {
+        return res.status(400).json({ message: 'Missing required fields' });
+      }
+      
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ message: 'User with this email already exists' });
+      }
+      
+      const newUser = await storage.createUser({
+        email,
+        firstName,
+        lastName,
+        role,
+        region: role === 'NEC_ENGINEER' ? region : null,
+        password // Will be hashed in storage
+      });
+      
+      res.status(201).json({ 
+        message: 'User created successfully',
+        user: {
+          id: newUser.id,
+          email: newUser.email,
+          firstName: newUser.firstName,
+          lastName: newUser.lastName,
+          role: newUser.role,
+          region: newUser.region
+        }
+      });
+    } catch (error) {
+      console.error('Error creating user:', error);
+      res.status(500).json({ message: 'Failed to create user' });
+    }
+  });
+
+  app.put('/api/users/:id', isAuthenticated, hasRole(['NEC_GENERAL', 'NEC_ADMIN']), async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { firstName, lastName, role, region, isActive } = req.body;
+      
+      const updatedUser = await storage.updateUser(id, {
+        firstName,
+        lastName,
+        role,
+        region: role === 'NEC_ENGINEER' ? region : null,
+        isActive
+      });
+      
+      res.json({ 
+        message: 'User updated successfully',
+        user: {
+          id: updatedUser.id,
+          email: updatedUser.email,
+          firstName: updatedUser.firstName,
+          lastName: updatedUser.lastName,
+          role: updatedUser.role,
+          region: updatedUser.region,
+          isActive: updatedUser.isActive
+        }
+      });
+    } catch (error) {
+      console.error('Error updating user:', error);
+      res.status(500).json({ message: 'Failed to update user' });
+    }
+  });
+
+  app.delete('/api/users/:id', isAuthenticated, hasRole(['NEC_GENERAL', 'NEC_ADMIN']), async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const currentUser = req.user as User;
+      
+      // Prevent self-deletion
+      if (id === currentUser.id) {
+        return res.status(400).json({ message: 'Cannot delete your own account' });
+      }
+      
+      await storage.deleteUser(id);
+      res.json({ message: 'User deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      res.status(500).json({ message: 'Failed to delete user' });
+    }
+  });
+
   // AI Assistant routes
   app.post('/api/ai/chat', isAuthenticated, hasRole(['NEC_GENERAL', 'NEC_ENGINEER', 'NEC_ADMIN']), async (req: any, res) => {
     try {
