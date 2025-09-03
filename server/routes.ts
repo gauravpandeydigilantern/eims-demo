@@ -60,6 +60,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // GET route for logout to handle direct navigation
+  app.get('/api/logout', (req, res) => {
+    req.logout((err) => {
+      if (err) {
+        return res.redirect('/?error=logout_failed');
+      }
+      res.redirect('/');
+    });
+  });
+
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
       const user = req.user as User;
