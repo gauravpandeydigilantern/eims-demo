@@ -52,7 +52,7 @@ export default function Sidebar({ isOpen, onClose, isMobile, activeTab, onTabCha
         'device-map': 'devices',
         'alerts': 'devices',
         'analytics': 'analytics',
-        'reports': 'reports',
+        'reports': 'logs',
         'ai-assistant': 'devices',
         'user-management': 'users',
         'settings': 'configuration'
@@ -84,6 +84,14 @@ export default function Sidebar({ isOpen, onClose, isMobile, activeTab, onTabCha
     };
   };
 
+  // Function to check if a sidebar item should be active
+  const isSidebarItemActive = (sidebarTab: string): boolean => {
+    if (!activeTab) return false;
+    const sidebarToTabMap = getSidebarToTabMap();
+    const mappedTab = sidebarToTabMap[sidebarTab];
+    return activeTab === mappedTab;
+  };
+
   return (
     <>
       {/* Mobile Overlay */}
@@ -106,7 +114,7 @@ export default function Sidebar({ isOpen, onClose, isMobile, activeTab, onTabCha
           <nav className="space-y-2">
             <button 
               className={`flex items-center space-x-3 rounded-lg px-3 py-2 font-medium w-full text-left transition-colors ${
-                activeTab === 'overview' 
+                isSidebarItemActive('overview') 
                   ? 'text-foreground bg-primary/10' 
                   : 'text-muted-foreground hover:text-foreground hover:bg-accent'
               }`}
@@ -122,7 +130,7 @@ export default function Sidebar({ isOpen, onClose, isMobile, activeTab, onTabCha
             
             <button 
               className={`flex items-center space-x-3 rounded-lg px-3 py-2 w-full text-left transition-colors ${
-                activeTab === 'overview' 
+                isSidebarItemActive('device-map') 
                   ? 'text-foreground bg-primary/10' 
                   : 'text-muted-foreground hover:text-foreground hover:bg-accent'
               }`}
@@ -138,7 +146,7 @@ export default function Sidebar({ isOpen, onClose, isMobile, activeTab, onTabCha
             
             <button 
               className={`flex items-center justify-between rounded-lg px-3 py-2 w-full text-left transition-colors ${
-                activeTab === 'alerts' 
+                isSidebarItemActive('alerts') 
                   ? 'text-foreground bg-primary/10' 
                   : 'text-muted-foreground hover:text-foreground hover:bg-accent'
               }`}
@@ -165,7 +173,7 @@ export default function Sidebar({ isOpen, onClose, isMobile, activeTab, onTabCha
             {canAccessAnalytics && (
               <button 
                 className={`flex items-center space-x-3 rounded-lg px-3 py-2 w-full text-left transition-colors ${
-                  activeTab === 'analytics' 
+                  isSidebarItemActive('analytics') 
                     ? 'text-foreground bg-primary/10' 
                     : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                 }`}
@@ -181,7 +189,7 @@ export default function Sidebar({ isOpen, onClose, isMobile, activeTab, onTabCha
             
             <button 
               className={`flex items-center space-x-3 rounded-lg px-3 py-2 w-full text-left transition-colors ${
-                activeTab === 'reports' 
+                isSidebarItemActive('reports') 
                   ? 'text-foreground bg-primary/10' 
                   : 'text-muted-foreground hover:text-foreground hover:bg-accent'
               }`}
@@ -196,7 +204,7 @@ export default function Sidebar({ isOpen, onClose, isMobile, activeTab, onTabCha
             
             <button 
               className={`flex items-center space-x-3 rounded-lg px-3 py-2 w-full text-left transition-colors ${
-                activeTab === 'operations' 
+                isSidebarItemActive('ai-assistant') 
                   ? 'text-foreground bg-primary/10' 
                   : 'text-muted-foreground hover:text-foreground hover:bg-accent'
               }`}
@@ -212,7 +220,7 @@ export default function Sidebar({ isOpen, onClose, isMobile, activeTab, onTabCha
             {canAccessUserManagement && (
               <button 
                 className={`flex items-center space-x-3 rounded-lg px-3 py-2 w-full text-left transition-colors ${
-                  activeTab === 'operations' 
+                  isSidebarItemActive('user-management') 
                     ? 'text-foreground bg-primary/10' 
                     : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                 }`}
@@ -228,7 +236,7 @@ export default function Sidebar({ isOpen, onClose, isMobile, activeTab, onTabCha
             
             <button 
               className={`flex items-center space-x-3 rounded-lg px-3 py-2 w-full text-left transition-colors ${
-                activeTab === 'operations' 
+                isSidebarItemActive('settings') 
                   ? 'text-foreground bg-primary/10' 
                   : 'text-muted-foreground hover:text-foreground hover:bg-accent'
               }`}
