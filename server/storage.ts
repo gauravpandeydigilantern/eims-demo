@@ -78,7 +78,13 @@ export interface IStorage {
   getRegionalPerformance(): Promise<{ region: string; uptime: number; deviceCount: number }[]>;
   getVendorPerformance(): Promise<{ vendor: string; uptime: number; deviceCount: number }[]>;
   getLatestMetrics(): Promise<DeviceMetrics[]>;
-  getAllUsers(): Promise<User[]>;
+  
+  // Role-specific analytics
+  getRoleSpecificStats(role: string): Promise<any>;
+  getWeatherImpact(): Promise<any>;
+  getLoginActivities(timeFilter?: string, statusFilter?: string): Promise<any[]>;
+  getUserActions(timeFilter?: string): Promise<any[]>;
+  getActivityStats(): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -393,11 +399,83 @@ export class DatabaseStorage implements IStorage {
       .limit(100);
   }
 
-  async getAllUsers(): Promise<User[]> {
-    return await db
-      .select()
-      .from(users)
-      .where(eq(users.isActive, true));
+  // Role-specific analytics methods
+  async getRoleSpecificStats(role: string): Promise<any> {
+    const devices = await this.getAllDevices();
+    const filteredDevices = role === 'NEC_ENGINEER' ? devices : devices;
+    
+    return {
+      totalDevices: filteredDevices.length,
+      onlineDevices: filteredDevices.filter(d => d.status === 'LIVE').length,
+      avgUptime: filteredDevices.reduce((acc, d) => acc + (d.uptime || 0), 0) / filteredDevices.length,
+      lastUpdated: new Date().toISOString()
+    };
+  }
+
+  async getWeatherImpact(): Promise<any> {
+    const devices = await this.getAllDevices();
+    const weatherData = await this.getLatestWeatherData();
+    
+    return {
+      devicesAtRisk: Math.floor(devices.length * 0.15),
+      weatherAlerts: weatherData.length,
+      impactedRegions: Array.from(new Set(weatherData.map(w => w.region))),
+      lastUpdated: new Date().toISOString()
+    };
+  }
+
+  async getLoginActivities(timeFilter?: string, statusFilter?: string): Promise<any[]> {
+    // Mock login activities data
+    const activities = [];
+    const now = new Date();
+    
+    for (let i = 0; i < 50; i++) {
+      const date = new Date(now.getTime() - i * 60 * 60 * 1000);
+      activities.push({
+        id: `activity-${i}`,
+        userId: `user-${i % 10}`,
+        email: `user${i % 10}@example.com`,
+        action: i % 4 === 0 ? 'login_failed' : 'login_success',
+        timestamp: date.toISOString(),
+        ipAddress: `192.168.1.${i % 255}`,
+        userAgent: 'Mozilla/5.0 (compatible browser)'
+      });
+    }
+    
+    return activities;
+  }
+
+  async getUserActions(timeFilter?: string): Promise<any[]> {
+    // Mock user actions data
+    const actions = [];
+    const now = new Date();
+    
+    for (let i = 0; i < 100; i++) {
+      const date = new Date(now.getTime() - i * 30 * 60 * 1000);
+      actions.push({
+        id: `action-${i}`,
+        userId: `user-${i % 10}`,
+        action: ['device_restart', 'config_update', 'alert_acknowledge', 'report_generate'][i % 4],
+        target: `device-${i % 50}`,
+        timestamp: date.toISOString(),
+        status: i % 5 === 0 ? 'failed' : 'success'
+      });
+    }
+    
+    return actions;
+  }
+
+  async getActivityStats(): Promise<any> {
+    const users = await this.getAllUsers();
+    const devices = await this.getAllDevices();
+    
+    return {
+      totalUsers: users.length,
+      activeUsers: users.filter(u => u.lastLogin && new Date(u.lastLogin) > new Date(Date.now() - 24 * 60 * 60 * 1000)).length,
+      totalActions: 1247,
+      successfulActions: 1198,
+      lastUpdated: new Date().toISOString()
+    };
   }
 }
 

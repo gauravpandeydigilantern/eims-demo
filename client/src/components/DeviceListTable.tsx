@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
+import { useLocation } from "wouter";
 
 interface DeviceListTableProps {
   onDeviceSelect: (deviceId: string) => void;
@@ -16,6 +17,7 @@ export default function DeviceListTable({ onDeviceSelect }: DeviceListTableProps
   const [statusFilter, setStatusFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 50;
+  const [, setLocation] = useLocation();
 
   const { user } = useAuth();
   const { data: devices, isLoading } = useQuery({
@@ -172,7 +174,7 @@ export default function DeviceListTable({ onDeviceSelect }: DeviceListTableProps
                 <tr 
                   key={device.id}
                   className="border-b border-border hover:bg-accent/50 cursor-pointer transition-colors"
-                  onClick={() => onDeviceSelect(device.id)}
+                  onClick={() => setLocation(`/device/${device.id}`)}
                   data-testid={`row-device-${device.id}`}
                 >
                   <td className="py-4 px-6">

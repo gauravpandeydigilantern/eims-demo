@@ -4,9 +4,20 @@ import { useQuery } from "@tanstack/react-query";
 import { Search, MapPin, Filter } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
+import { useLocation } from "wouter";
 
 export default function StatusMetrics() {
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
+  const [, setLocation] = useLocation();
+
+  const navigateToFilteredDevices = (status?: string, region?: string) => {
+    const params = new URLSearchParams();
+    if (status && status !== 'ALL') params.set('status', status);
+    if (region) params.set('region', region);
+    
+    const paramString = params.toString();
+    setLocation(`/devices${paramString ? `/${encodeURIComponent(paramString)}` : ''}`);
+  };
   
   const { data: statusSummary, isLoading } = useQuery<Array<{status: string; count: number}>>({
     queryKey: ["/api/analytics/status-summary"],
@@ -68,7 +79,9 @@ export default function StatusMetrics() {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {/* UP Status */}
-            <div className="text-center">
+            <div className="text-center cursor-pointer hover:bg-muted/50 p-3 rounded-lg transition-colors" 
+                 onClick={() => navigateToFilteredDevices('LIVE')}
+                 data-testid="stat-up-devices">
               <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-lg mb-2">
                 <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
                   <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -81,7 +94,9 @@ export default function StatusMetrics() {
             </div>
             
             {/* Live Status */}
-            <div className="text-center">
+            <div className="text-center cursor-pointer hover:bg-muted/50 p-3 rounded-lg transition-colors"
+                 onClick={() => navigateToFilteredDevices('LIVE')}
+                 data-testid="stat-live-devices">
               <div className="inline-flex items-center justify-center w-16 h-16 bg-green-50 rounded-lg mb-2">
                 <div className="w-8 h-8 bg-green-400 rounded-full flex items-center justify-center">
                   <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
@@ -92,7 +107,9 @@ export default function StatusMetrics() {
             </div>
             
             {/* Time Off */}
-            <div className="text-center">
+            <div className="text-center cursor-pointer hover:bg-muted/50 p-3 rounded-lg transition-colors"
+                 onClick={() => navigateToFilteredDevices('MAINTENANCE')}
+                 data-testid="stat-maintenance-devices">
               <div className="inline-flex items-center justify-center w-16 h-16 bg-yellow-100 rounded-lg mb-2">
                 <div className="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center">
                   <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -105,7 +122,9 @@ export default function StatusMetrics() {
             </div>
             
             {/* DOWN Status */}
-            <div className="text-center">
+            <div className="text-center cursor-pointer hover:bg-muted/50 p-3 rounded-lg transition-colors"
+                 onClick={() => navigateToFilteredDevices('DOWN')}
+                 data-testid="stat-down-devices">
               <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-lg mb-2">
                 <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
                   <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">

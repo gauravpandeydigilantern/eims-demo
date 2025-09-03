@@ -171,6 +171,7 @@ function NECGeneralDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const isMobile = useIsMobile();
+  const { user } = useAuth();
 
   const { data: systemStats } = useQuery({
     queryKey: ['/api/analytics/system-overview'],

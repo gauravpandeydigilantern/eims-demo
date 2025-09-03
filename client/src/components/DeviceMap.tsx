@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { useWebSocket } from "@/hooks/useWebSocket";
+import { useLocation } from "wouter";
 
 interface DeviceMapProps {
   onDeviceSelect: (deviceId: string) => void;
@@ -21,6 +22,7 @@ export default function DeviceMap({ onDeviceSelect }: DeviceMapProps) {
   const markersRef = useRef<any[]>([]);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [showClusters, setShowClusters] = useState(true);
+  const [, setLocation] = useLocation();
 
   const { data: devices, isLoading } = useQuery({
     queryKey: ["/api/devices"],
@@ -76,8 +78,10 @@ export default function DeviceMap({ onDeviceSelect }: DeviceMapProps) {
 
   // Set up global function for device selection
   useEffect(() => {
-    (window as any).selectDevice = onDeviceSelect;
-  }, [onDeviceSelect]);
+    (window as any).selectDevice = (deviceId: string) => {
+      setLocation(`/device/${deviceId}`);
+    };
+  }, [setLocation]);
 
   const initializeMap = () => {
     if (!mapRef.current || !window.L) return;
