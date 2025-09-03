@@ -74,6 +74,8 @@ export interface IStorage {
   getDeviceStatusSummary(): Promise<{ status: string; count: number }[]>;
   getRegionalPerformance(): Promise<{ region: string; uptime: number; deviceCount: number }[]>;
   getVendorPerformance(): Promise<{ vendor: string; uptime: number; deviceCount: number }[]>;
+  getLatestMetrics(): Promise<DeviceMetrics[]>;
+  getAllUsers(): Promise<User[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -156,7 +158,7 @@ export class DatabaseStorage implements IStorage {
 
   async getDevicesByStatus(status: string): Promise<Device[]> {
     return await db.select().from(devices)
-      .where(and(eq(devices.status, status), eq(devices.isActive, true)));
+      .where(and(eq(devices.status, status as any), eq(devices.isActive, true)));
   }
 
   async createDevice(device: InsertDevice): Promise<Device> {
@@ -206,7 +208,7 @@ export class DatabaseStorage implements IStorage {
 
   async getAlertsByType(type: string): Promise<Alert[]> {
     return await db.select().from(alerts)
-      .where(eq(alerts.type, type))
+      .where(eq(alerts.type, type as any))
       .orderBy(desc(alerts.createdAt));
   }
 
@@ -358,6 +360,21 @@ export class DatabaseStorage implements IStorage {
       uptime: Number(r.avgUptime) || 0,
       deviceCount: Number(r.deviceCount),
     }));
+  }
+
+  async getLatestMetrics(): Promise<DeviceMetrics[]> {
+    return await db
+      .select()
+      .from(deviceMetrics)
+      .orderBy(desc(deviceMetrics.timestamp))
+      .limit(100);
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return await db
+      .select()
+      .from(users)
+      .where(eq(users.isActive, true));
   }
 }
 

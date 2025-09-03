@@ -1,5 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 
 export default function WeatherPanel() {
@@ -75,8 +76,8 @@ export default function WeatherPanel() {
     );
   }
 
-  const latestWeatherData = weatherData?.slice(0, 6) || [];
-  const activeWeatherAlerts = weatherAlerts?.slice(0, 3) || [];
+  const latestWeatherData = Array.isArray(weatherData) ? weatherData.slice(0, 6) : [];
+  const activeWeatherAlerts = Array.isArray(weatherAlerts) ? weatherAlerts.slice(0, 3) : [];
 
   return (
     <div className="space-y-6">
@@ -217,7 +218,7 @@ export default function WeatherPanel() {
           )}
 
           {/* Environmental Impact Summary */}
-          {devicesAtRisk && devicesAtRisk.length > 0 && (
+          {Array.isArray(devicesAtRisk) && devicesAtRisk.length > 0 && (
             <div>
               <h4 className="font-medium text-foreground mb-3">Environmental Impact</h4>
               <div className="space-y-2">

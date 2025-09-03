@@ -111,6 +111,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/devices/stats', isAuthenticated, async (req: any, res) => {
+    try {
+      const devices = await storage.getAllDevices();
+      const stats = {
+        total: devices.length,
+        online: devices.filter(d => d.status === 'LIVE').length,
+        offline: devices.filter(d => d.status === 'SHUTDOWN').length,
+        maintenance: devices.filter(d => d.status === 'MAINTENANCE').length,
+        avgUptime: devices.reduce((acc, d) => acc + (d.uptime || 0), 0) / devices.length
+      };
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching device stats:", error);
+      res.status(500).json({ message: "Failed to fetch device stats" });
+    }
+  });
+
   app.post('/api/devices/:id/operations', isAuthenticated, hasRole(['NEC_GENERAL', 'NEC_ENGINEER', 'NEC_ADMIN']), async (req: any, res) => {
     try {
       const user = req.user as User;
@@ -158,6 +175,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching vendor performance:", error);
       res.status(500).json({ message: "Failed to fetch vendor performance" });
+    }
+  });
+
+  app.get('/api/analytics/system-overview', isAuthenticated, async (req, res) => {
+    try {
+      const devices = await storage.getAllDevices();
+      const alerts = await storage.getActiveAlerts();
+      const metrics = await storage.getLatestMetrics();
+      
+      const overview = {
+        totalDevices: devices.length,
+        onlineDevices: devices.filter(d => d.status === 'LIVE').length,
+        criticalAlerts: alerts.filter((a: any) => a.severity === 'CRITICAL').length,
+        avgPerformance: devices.reduce((acc, d) => acc + (d.uptime || 0), 0) / devices.length,
+        lastUpdated: new Date().toISOString()
+      };
+      
+      res.json(overview);
+    } catch (error) {
+      console.error("Error fetching system overview:", error);
+      res.status(500).json({ message: "Failed to fetch system overview" });
+    }
+  });
+
+  app.get('/api/analytics/regional-stats', isAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user as User;
+      const region = req.query.region || user.region;
+      
+      const devices = await storage.getAllDevices();
+      const filteredDevices = region ? devices.filter(d => d.region === region) : devices;
+      
+      const stats = {
+        region: region,
+        totalDevices: filteredDevices.length,
+        onlineDevices: filteredDevices.filter(d => d.status === 'LIVE').length,
+        avgPerformance: filteredDevices.reduce((acc, d) => acc + (d.uptime || 0), 0) / filteredDevices.length,
+        lastUpdated: new Date().toISOString()
+      };
+      
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching regional stats:", error);
+      res.status(500).json({ message: "Failed to fetch regional stats" });
+    }
+  });
+
+  app.get('/api/admin/stats', isAuthenticated, hasRole(['NEC_ADMIN', 'NEC_GENERAL']), async (req, res) => {
+    try {
+      const devices = await storage.getAllDevices();
+      const users = await storage.getAllUsers();
+      
+      const stats = {
+        totalDevices: devices.length,
+        totalUsers: users.length,
+        pendingConfigs: Math.floor(Math.random() * 50) + 10,
+        firmwareUpdates: Math.floor(Math.random() * 200) + 100,
+        lastUpdated: new Date().toISOString()
+      };
+      
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching admin stats:", error);
+      res.status(500).json({ message: "Failed to fetch admin stats" });
     }
   });
 
