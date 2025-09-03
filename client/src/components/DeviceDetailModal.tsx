@@ -400,17 +400,71 @@ export default function DeviceDetailModal({ deviceId, onClose }: DeviceDetailMod
                 </CardContent>
               </Card>
 
-              {/* Performance Chart Placeholder */}
+              {/* Last TAG Read Status */}
               <Card>
                 <CardContent className="pt-4">
-                  <h3 className="text-lg font-semibold mb-4">Performance Trend (24h)</h3>
-                  <div className="h-32 bg-muted/30 rounded-lg flex items-center justify-center">
-                    <span className="text-muted-foreground text-sm">
-                      <svg className="w-6 h-6 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H9a2 2 0 01-2-2z" />
-                      </svg>
-                      Performance chart implementation would go here
-                    </span>
+                  <h3 className="text-lg font-semibold mb-4">Last TAG Read Status</h3>
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Last Read:</span>
+                      <span className="text-foreground font-medium" data-testid="text-last-tag-read">
+                        {device.lastTagRead ? new Date(device.lastTagRead).toLocaleString() : 'No data'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Read Frequency:</span>
+                      <span className="text-foreground" data-testid="text-read-frequency">
+                        {device.readFrequency || 'N/A'} reads/hour
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Success Rate:</span>
+                      <span className="text-green-600 font-medium" data-testid="text-read-success-rate">
+                        {device.readSuccessRate || 'N/A'}%
+                      </span>
+                    </div>
+                    <div className="h-20 bg-muted/30 rounded-lg flex items-center justify-center">
+                      <span className="text-muted-foreground text-xs">
+                        TAG Read Timeline (12-month configurable view)
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Last Registration Status */}
+              <Card>
+                <CardContent className="pt-4">
+                  <h3 className="text-lg font-semibold mb-4">Last Registration Status</h3>
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Last Registration:</span>
+                      <span className="text-foreground font-medium" data-testid="text-last-registration">
+                        {device.lastRegistration ? new Date(device.lastRegistration).toLocaleString() : 'No data'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Registration Rate:</span>
+                      <span className="text-foreground" data-testid="text-registration-rate">
+                        {device.registrationRate || 'N/A'} reg/day
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Success/Failure:</span>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-green-600 text-sm" data-testid="text-registration-success">
+                          {device.registrationSuccess || 0} ✓
+                        </span>
+                        <span className="text-red-600 text-sm" data-testid="text-registration-failures">
+                          {device.registrationFailures || 0} ✗
+                        </span>
+                      </div>
+                    </div>
+                    <div className="h-20 bg-muted/30 rounded-lg flex items-center justify-center">
+                      <span className="text-muted-foreground text-xs">
+                        Registration Pattern Analysis
+                      </span>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

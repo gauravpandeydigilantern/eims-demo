@@ -574,7 +574,158 @@ function NECGeneralDashboard() {
                   </Card>
                 </div>
 
-                <AIAssistant />
+                {/* AI Assistant */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Cpu className="w-5 h-5" />
+                      AI Operations Assistant
+                    </CardTitle>
+                    <CardDescription>Intelligent system management and troubleshooting support</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <AIAssistant />
+                  </CardContent>
+                </Card>
+
+                {/* User Management Section */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Users className="w-5 h-5" />
+                      User Management
+                    </CardTitle>
+                    <CardDescription>Manage user accounts, roles, and access permissions</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm">Total Users</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-2xl font-bold">247</div>
+                          <p className="text-xs text-muted-foreground">+12 this month</p>
+                        </CardContent>
+                      </Card>
+                      
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm">Active Sessions</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-2xl font-bold text-green-600">89</div>
+                          <p className="text-xs text-muted-foreground">Currently online</p>
+                        </CardContent>
+                      </Card>
+                      
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm">Pending Approvals</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-2xl font-bold text-orange-600">7</div>
+                          <p className="text-xs text-muted-foreground">Require review</p>
+                        </CardContent>
+                      </Card>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <h4 className="font-medium">Recent User Activity</h4>
+                        <Button variant="outline" size="sm" data-testid="button-manage-users">
+                          Manage Users
+                        </Button>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        {[
+                          { name: 'Rajesh Kumar', role: 'NEC_ENGINEER', action: 'Device Reset', time: '2 min ago' },
+                          { name: 'Priya Sharma', role: 'NEC_ADMIN', action: 'User Created', time: '15 min ago' },
+                          { name: 'Amit Singh', role: 'NEC_GENERAL', action: 'System Config', time: '1 hour ago' }
+                        ].map((activity, index) => (
+                          <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                                <Users className="w-4 h-4 text-primary" />
+                              </div>
+                              <div>
+                                <p className="font-medium text-sm">{activity.name}</p>
+                                <p className="text-xs text-muted-foreground">{activity.role}</p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm">{activity.action}</p>
+                              <p className="text-xs text-muted-foreground">{activity.time}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* System Settings */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Settings className="w-5 h-5" />
+                      System Settings
+                    </CardTitle>
+                    <CardDescription>Configure system-wide settings and preferences</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <h4 className="font-medium">Device Management</h4>
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm">Auto-restart failed devices</span>
+                            <Button variant="outline" size="sm">Enabled</Button>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm">Health check interval</span>
+                            <span className="text-sm text-muted-foreground">30 seconds</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm">Alert threshold</span>
+                            <span className="text-sm text-muted-foreground">3 failures</span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        <h4 className="font-medium">Security & Access</h4>
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm">Session timeout</span>
+                            <span className="text-sm text-muted-foreground">4 hours</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm">Two-factor authentication</span>
+                            <Button variant="outline" size="sm">Required</Button>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm">Audit logging</span>
+                            <Button variant="outline" size="sm">Enabled</Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-6 pt-6 border-t">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <h4 className="font-medium">System Configuration</h4>
+                          <p className="text-sm text-muted-foreground">Manage global system settings</p>
+                        </div>
+                        <Button data-testid="button-advanced-settings">
+                          Advanced Settings
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </TabsContent>
 
               {/* Reports Tab */}
