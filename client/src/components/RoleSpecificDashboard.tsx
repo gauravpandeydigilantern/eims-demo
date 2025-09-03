@@ -3,6 +3,7 @@ import StatusMetrics from "./StatusMetrics";
 import AdvancedStatusMetrics from "./AdvancedStatusMetrics";
 import DeviceMap from "./DeviceMap";
 import DeviceListTable from "./DeviceListTable";
+import DeviceRegistrationTable from "./DeviceRegistrationTable";
 import AlertsPanel from "./AlertsPanel";
 import AIAssistantPanel from "./AIAssistantPanel";
 import WeatherPanel from "./WeatherPanel";
@@ -54,7 +55,7 @@ export default function RoleSpecificDashboard({ onDeviceSelect }: RoleSpecificDa
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
           <div className="xl:col-span-2 space-y-6">
             <DeviceMap onDeviceSelect={onDeviceSelect} />
-            <DeviceListTable onDeviceSelect={onDeviceSelect} />
+            <DeviceRegistrationTable />
           </div>
           
           <div className="space-y-6">
@@ -93,7 +94,7 @@ export default function RoleSpecificDashboard({ onDeviceSelect }: RoleSpecificDa
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
           <div className="xl:col-span-2 space-y-6">
             <DeviceMap onDeviceSelect={onDeviceSelect} />
-            <DeviceListTable onDeviceSelect={onDeviceSelect} />
+            <DeviceRegistrationTable />
           </div>
           
           <div className="space-y-6">
@@ -161,7 +162,7 @@ export default function RoleSpecificDashboard({ onDeviceSelect }: RoleSpecificDa
               </CardContent>
             </Card>
             
-            <DeviceListTable onDeviceSelect={onDeviceSelect} />
+            <DeviceRegistrationTable />
           </div>
           
           <div className="space-y-6">
