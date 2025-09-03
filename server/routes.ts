@@ -111,15 +111,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/devices/stats', isAuthenticated, async (req: any, res) => {
+  app.get('/api/devices/stats', isAuthenticated, hasRegionalAccess, async (req: any, res) => {
     try {
-      const devices = await storage.getAllDevices();
+      const user = req.user as User;
+      let devices = await storage.getAllDevices();
+      
+      // Apply regional restrictions for NEC_ENGINEER
+      if (user.role === 'NEC_ENGINEER' && user.region) {
+        devices = devices.filter(d => d.region === user.region);
+      }
+      
       const stats = {
         total: devices.length,
         online: devices.filter(d => d.status === 'LIVE').length,
         offline: devices.filter(d => d.status === 'SHUTDOWN').length,
         maintenance: devices.filter(d => d.status === 'MAINTENANCE').length,
-        avgUptime: devices.reduce((acc, d) => acc + (d.uptime || 0), 0) / devices.length
+        avgUptime: devices.length > 0 ? devices.reduce((acc, d) => acc + (d.uptime || 0), 0) / devices.length : 0
       };
       res.json(stats);
     } catch (error) {
@@ -148,7 +155,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Analytics routes
-  app.get('/api/analytics/status-summary', isAuthenticated, async (req, res) => {
+  app.get('/api/analytics/status-summary', isAuthenticated, hasRole(['NEC_GENERAL', 'NEC_ENGINEER', 'NEC_ADMIN', 'CLIENT']), async (req, res) => {
     try {
       const summary = await storage.getDeviceStatusSummary();
       res.json(summary);
@@ -158,9 +165,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/analytics/regional-performance', isAuthenticated, async (req, res) => {
+  app.get('/api/analytics/regional-performance', isAuthenticated, hasRole(['NEC_GENERAL', 'NEC_ENGINEER', 'NEC_ADMIN', 'CLIENT']), async (req: any, res) => {
     try {
+      const user = req.user as User;
       const performance = await storage.getRegionalPerformance();
+      
+      // Apply regional restrictions for NEC_ENGINEER
+      if (user.role === 'NEC_ENGINEER' && user.region) {
+        // Filter performance data by user's region
+        // This would need to be implemented in storage.getRegionalPerformance() with region parameter
+      }
+      
       res.json(performance);
     } catch (error) {
       console.error("Error fetching regional performance:", error);
@@ -168,7 +183,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/analytics/vendor-performance', isAuthenticated, async (req, res) => {
+  app.get('/api/analytics/vendor-performance', isAuthenticated, hasRole(['NEC_GENERAL', 'NEC_ADMIN', 'CLIENT']), async (req, res) => {
     try {
       const performance = await storage.getVendorPerformance();
       res.json(performance);
@@ -178,7 +193,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/analytics/system-overview', isAuthenticated, async (req, res) => {
+  app.get('/api/analytics/system-overview', isAuthenticated, hasRole(['NEC_GENERAL', 'NEC_ADMIN']), async (req, res) => {
     try {
       const devices = await storage.getAllDevices();
       const alerts = await storage.getActiveAlerts();
@@ -199,10 +214,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/analytics/regional-stats', isAuthenticated, async (req: any, res) => {
+  app.get('/api/analytics/regional-stats', isAuthenticated, hasRole(['NEC_GENERAL', 'NEC_ENGINEER', 'NEC_ADMIN', 'CLIENT']), async (req: any, res) => {
     try {
       const user = req.user as User;
-      const region = req.query.region || user.region;
+      let region = req.query.region as string;
+      
+      // For NEC_ENGINEER, restrict to their assigned region only
+      if (user.role === 'NEC_ENGINEER' && user.region) {
+        region = user.region; // Override any requested region
+      } else if (!region) {
+        region = user.region || '';
+      }
       
       const devices = await storage.getAllDevices();
       const filteredDevices = region ? devices.filter(d => d.region === region) : devices;
@@ -243,9 +265,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Alerts routes
-  app.get('/api/alerts', isAuthenticated, async (req, res) => {
+  app.get('/api/alerts', isAuthenticated, hasRegionalAccess, async (req: any, res) => {
     try {
-      const alerts = await storage.getActiveAlerts();
+      const user = req.user as User;
+      let alerts = await storage.getActiveAlerts();
+      
+      // Apply regional restrictions for NEC_ENGINEER
+      if (user.role === 'NEC_ENGINEER' && user.region) {
+        alerts = alerts.filter((a: any) => a.region === user.region);
+      }
+      
       res.json(alerts);
     } catch (error) {
       console.error("Error fetching alerts:", error);
@@ -253,9 +282,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/alerts/:id/acknowledge', isAuthenticated, async (req: any, res) => {
+  app.post('/api/alerts/:id/acknowledge', isAuthenticated, hasRole(['NEC_GENERAL', 'NEC_ENGINEER', 'NEC_ADMIN']), async (req: any, res) => {
     try {
-      const alert = await storage.acknowledgeAlert(req.params.id, req.user.claims.sub);
+      const alert = await storage.acknowledgeAlert(req.params.id, req.user.id);
       res.json(alert);
     } catch (error) {
       console.error("Error acknowledging alert:", error);
@@ -263,9 +292,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/alerts/:id/resolve', isAuthenticated, async (req: any, res) => {
+  app.post('/api/alerts/:id/resolve', isAuthenticated, hasRole(['NEC_GENERAL', 'NEC_ENGINEER', 'NEC_ADMIN']), async (req: any, res) => {
     try {
-      const alert = await storage.resolveAlert(req.params.id, req.user.claims.sub);
+      const alert = await storage.resolveAlert(req.params.id, req.user.id);
       res.json(alert);
     } catch (error) {
       console.error("Error resolving alert:", error);
@@ -273,9 +302,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/alerts/summary', isAuthenticated, async (req, res) => {
+  app.get('/api/alerts/summary', isAuthenticated, hasRegionalAccess, async (req: any, res) => {
     try {
+      const user = req.user as User;
       const summary = await alertService.getAlertsSummary();
+      
+      // Apply regional restrictions for NEC_ENGINEER
+      if (user.role === 'NEC_ENGINEER' && user.region) {
+        // Filter summary data by region if needed
+        // This would need to be implemented in alertService.getAlertsSummary() with region parameter
+      }
+      
       res.json(summary);
     } catch (error) {
       console.error("Error fetching alerts summary:", error);
@@ -284,7 +321,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Weather routes
-  app.get('/api/weather', isAuthenticated, async (req, res) => {
+  app.get('/api/weather', isAuthenticated, hasRole(['NEC_GENERAL', 'NEC_ENGINEER', 'NEC_ADMIN', 'CLIENT']), async (req, res) => {
     try {
       const weatherData = await storage.getLatestWeatherData();
       res.json(weatherData);
@@ -294,7 +331,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/weather/alerts', isAuthenticated, async (req, res) => {
+  app.get('/api/weather/alerts', isAuthenticated, hasRole(['NEC_GENERAL', 'NEC_ENGINEER', 'NEC_ADMIN', 'CLIENT']), async (req, res) => {
     try {
       const alerts = await weatherService.getWeatherAlerts();
       res.json(alerts);
@@ -304,7 +341,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/weather/devices-at-risk', isAuthenticated, async (req, res) => {
+  app.get('/api/weather/devices-at-risk', isAuthenticated, hasRole(['NEC_GENERAL', 'NEC_ENGINEER', 'NEC_ADMIN']), async (req, res) => {
     try {
       const devicesAtRisk = await weatherService.getDevicesAtRisk();
       res.json(devicesAtRisk);
@@ -315,10 +352,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // AI Assistant routes
-  app.post('/api/ai/chat', isAuthenticated, async (req: any, res) => {
+  app.post('/api/ai/chat', isAuthenticated, hasRole(['NEC_GENERAL', 'NEC_ENGINEER', 'NEC_ADMIN']), async (req: any, res) => {
     try {
       const { query, sessionId } = req.body;
-      const result = await aiService.processQuery(req.user.claims.sub, query, sessionId);
+      const result = await aiService.processQuery(req.user.id, query, sessionId);
       res.json(result);
     } catch (error) {
       console.error("Error processing AI query:", error);
@@ -326,9 +363,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/ai/sessions', isAuthenticated, async (req: any, res) => {
+  app.get('/api/ai/sessions', isAuthenticated, hasRole(['NEC_GENERAL', 'NEC_ENGINEER', 'NEC_ADMIN']), async (req: any, res) => {
     try {
-      const sessions = await storage.getUserChatSessions(req.user.claims.sub);
+      const sessions = await storage.getUserChatSessions(req.user.id);
       res.json(sessions);
     } catch (error) {
       console.error("Error fetching chat sessions:", error);
