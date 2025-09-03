@@ -61,11 +61,15 @@ async function seedDevices(): Promise<any[]> {
       for (let device = 1; device <= devicesPerPlaza; device++) {
         const deviceType = device <= devicesPerPlaza - 2 ? 'FIXED_READER' : 'HANDHELD_DEVICE';
         const vendor = vendors[Math.floor(Math.random() * vendors.length)];
-        const status = Math.random() > 0.05 ? 'LIVE' : statuses[Math.floor(Math.random() * statuses.length)];
+        // Realistic status distribution: 80% LIVE, 12% DOWN, 5% MAINTENANCE, 3% WARNING
+        const rand = Math.random();
+        const status = rand < 0.80 ? 'LIVE' : 
+                      rand < 0.92 ? 'DOWN' : 
+                      rand < 0.97 ? 'MAINTENANCE' : 'WARNING';
         
         const deviceId = deviceType === 'FIXED_READER' 
-          ? `FR_${region.name.substring(0, 3).toUpperCase()}_${String(deviceCounter).padStart(3, '0')}`
-          : `HHD_${region.name.substring(0, 3).toUpperCase()}_${String(deviceCounter).padStart(3, '0')}`;
+          ? `FR_${region.name.substring(0, 3).toUpperCase()}_${String(plaza).padStart(2, '0')}_${String(device).padStart(2, '0')}`
+          : `HHD_${region.name.substring(0, 3).toUpperCase()}_${String(plaza).padStart(2, '0')}_${String(device).padStart(2, '0')}`;
 
         // Add some geographic variation around the main location
         const latVariation = (Math.random() - 0.5) * 0.5; // ±0.25 degrees
@@ -89,11 +93,15 @@ async function seedDevices(): Promise<any[]> {
           longitude: (region.lng + lngVariation).toString(),
           installDate: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000), // Random date in past year
           lastSeen: status === 'DOWN' ? new Date(Date.now() - Math.random() * 24 * 60 * 60 * 1000) : new Date(), // Random time for down devices
+          lastSync: status === 'DOWN' ? new Date(Date.now() - Math.random() * 24 * 60 * 60 * 1000) : new Date(Date.now() - Math.random() * 10 * 60 * 1000), // Recent sync for active devices
           lastTransaction: status === 'LIVE' ? new Date(Date.now() - Math.random() * 60 * 60 * 1000) : undefined, // Random time in past hour for live devices
           lastTagRead: status === 'LIVE' ? new Date(Date.now() - Math.random() * 30 * 60 * 1000) : undefined, // Random time in past 30 min
           lastRegistration: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000), // Random time in past week
           uptime: status === 'LIVE' ? Math.floor(Math.random() * 100000) : 0,
           transactionCount: Math.floor(Math.random() * 10000),
+          pendingCount: status === 'LIVE' ? Math.floor(Math.random() * 20) : 0, // Pending transactions for live devices
+          successCount: status === 'LIVE' ? Math.floor(Math.random() * 8000) + 1000 : 0, // Success count for live devices
+          timeDifference: status === 'LIVE' ? '0 Min' : status === 'MAINTENANCE' ? '5 Min' : '30+ Min', // Time difference indicator
         };
 
         try {
@@ -113,16 +121,19 @@ async function seedDevices(): Promise<any[]> {
 
 async function seedDeviceMetrics(devices: any[]) {
   for (const device of devices) {
-    // Create current metrics for each device
+    // Create current metrics for each device with realistic values
     const metrics: InsertDeviceMetrics = {
       deviceId: device.id,
-      cpuUsage: Math.floor(Math.random() * 100),
-      ramUsage: Math.floor(Math.random() * 100),
-      temperature: (25 + Math.random() * 30).toString(), // 25-55°C
-      antennaStatus: Math.random() > 0.02, // 98% antenna success rate
-      networkStatus: device.status === 'LIVE',
+      cpuUsage: device.status === 'LIVE' ? Math.floor(Math.random() * 40) + 20 : Math.floor(Math.random() * 100), // 20-60% for live devices
+      ramUsage: device.status === 'LIVE' ? Math.floor(Math.random() * 50) + 30 : Math.floor(Math.random() * 100), // 30-80% for live devices
+      temperature: device.status === 'LIVE' ? (25 + Math.random() * 20).toString() : (25 + Math.random() * 30).toString(), // Cooler for live devices
+      antennaStatus: device.status === 'LIVE' ? Math.random() > 0.05 : Math.random() > 0.3, // Better antenna for live devices
+      networkStatus: device.status === 'LIVE' || device.status === 'MAINTENANCE',
       powerStatus: device.status !== 'DOWN',
-      healthScore: device.status === 'LIVE' ? Math.floor(Math.random() * 30) + 70 : Math.floor(Math.random() * 50),
+      healthScore: device.status === 'LIVE' ? Math.floor(Math.random() * 20) + 80 : // 80-100 for live
+                  device.status === 'MAINTENANCE' ? Math.floor(Math.random() * 30) + 50 : // 50-80 for maintenance
+                  device.status === 'WARNING' ? Math.floor(Math.random() * 20) + 60 : // 60-80 for warning
+                  Math.floor(Math.random() * 50), // 0-50 for down
     };
 
     try {
@@ -134,13 +145,12 @@ async function seedDeviceMetrics(devices: any[]) {
 }
 
 async function seedAlerts(devices: any[]) {
-  const alertTypes = ['CRITICAL', 'WARNING', 'INFO'];
-  const alertCategories = ['DEVICE_OFFLINE', 'PERFORMANCE', 'WEATHER', 'MAINTENANCE', 'SECURITY'];
-  
-  // Create some sample alerts
   const downDevices = devices.filter(d => d.status === 'DOWN');
+  const warningDevices = devices.filter(d => d.status === 'WARNING');
+  const maintenanceDevices = devices.filter(d => d.status === 'MAINTENANCE');
   
-  for (const device of downDevices.slice(0, 20)) { // Create alerts for first 20 down devices
+  // Create critical alerts only for DOWN devices (limited number)
+  for (const device of downDevices.slice(0, Math.min(5, downDevices.length))) {
     const alert: InsertAlert = {
       deviceId: device.id,
       type: 'CRITICAL' as any,
@@ -160,45 +170,74 @@ async function seedAlerts(devices: any[]) {
     }
   }
 
-  // Create some performance alerts
-  for (let i = 0; i < 15; i++) {
-    const randomDevice = devices[Math.floor(Math.random() * devices.length)];
+  // Create warning alerts for WARNING devices
+  for (const device of warningDevices) {
+    const warningTypes = [
+      { title: 'High CPU Usage', message: `Device CPU usage is above 85%`, category: 'PERFORMANCE' },
+      { title: 'Communication Warning', message: `Intermittent communication detected`, category: 'PERFORMANCE' },
+      { title: 'Temperature Alert', message: `Device temperature is elevated`, category: 'PERFORMANCE' }
+    ];
+    const warning = warningTypes[Math.floor(Math.random() * warningTypes.length)];
+    
     const alert: InsertAlert = {
-      deviceId: randomDevice.id,
+      deviceId: device.id,
       type: 'WARNING' as any,
-      category: 'PERFORMANCE' as any,
-      title: 'High CPU Usage',
-      message: `Device CPU usage is above 85%`,
+      category: warning.category as any,
+      title: warning.title,
+      message: warning.message,
       metadata: {
-        cpuUsage: Math.floor(Math.random() * 15) + 85,
-        deviceLocation: randomDevice.location,
+        deviceLocation: device.location,
       },
     };
 
     try {
       await storage.createAlert(alert);
     } catch (error) {
-      console.error(`Failed to create performance alert:`, error);
+      console.error(`Failed to create warning alert for device ${device.id}:`, error);
     }
   }
 
-  // Create weather alerts
-  const weatherAlert: InsertAlert = {
-    type: 'WARNING' as any,
-    category: 'WEATHER' as any,
-    title: 'Weather Alert',
-    message: 'Heavy rainfall expected in Maharashtra region',
-    metadata: {
-      region: 'Mumbai',
-      weatherType: 'heavy_rain',
-      expectedDuration: '6 hours',
-    },
-  };
+  // Create info alerts for maintenance devices
+  for (const device of maintenanceDevices) {
+    const alert: InsertAlert = {
+      deviceId: device.id,
+      type: 'INFO' as any,
+      category: 'MAINTENANCE' as any,
+      title: 'Scheduled Maintenance',
+      message: `Device ${device.id} is under scheduled maintenance`,
+      metadata: {
+        deviceLocation: device.location,
+        maintenanceType: 'routine_check',
+      },
+    };
 
-  try {
-    await storage.createAlert(weatherAlert);
-  } catch (error) {
-    console.error('Failed to create weather alert:', error);
+    try {
+      await storage.createAlert(alert);
+    } catch (error) {
+      console.error(`Failed to create maintenance alert for device ${device.id}:`, error);
+    }
+  }
+
+  // Create some regional weather alerts (limited)
+  const regions = ['Mumbai', 'Delhi', 'Chennai'];
+  for (const region of regions.slice(0, 2)) { // Only 2 weather alerts
+    const weatherAlert: InsertAlert = {
+      type: Math.random() > 0.5 ? 'WARNING' as any : 'INFO' as any,
+      category: 'WEATHER' as any,
+      title: 'Weather Alert',
+      message: `Weather conditions may affect device performance in ${region}`,
+      metadata: {
+        region: region,
+        weatherType: Math.random() > 0.5 ? 'heavy_rain' : 'high_wind',
+        expectedDuration: '3-6 hours',
+      },
+    };
+
+    try {
+      await storage.createAlert(weatherAlert);
+    } catch (error) {
+      console.error(`Failed to create weather alert for ${region}:`, error);
+    }
   }
 }
 
