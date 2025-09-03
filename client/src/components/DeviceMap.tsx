@@ -106,7 +106,7 @@ export default function DeviceMap({ onDeviceSelect }: DeviceMapProps) {
   };
 
   const addIndividualMarkers = () => {
-    if (!devices) return;
+    if (!devices || !Array.isArray(devices)) return;
 
     devices.forEach((device: any) => {
       if (!device.latitude || !device.longitude) return;
@@ -139,7 +139,7 @@ export default function DeviceMap({ onDeviceSelect }: DeviceMapProps) {
 
   const addClusteredMarkers = () => {
     // Simple clustering by region for performance
-    if (!devices) return;
+    if (!devices || !Array.isArray(devices)) return;
 
     const regionGroups = devices.reduce((groups: any, device: any) => {
       const region = device.region;
@@ -233,10 +233,10 @@ export default function DeviceMap({ onDeviceSelect }: DeviceMapProps) {
     return colors[status as keyof typeof colors] || '#6b7280';
   };
 
-  const statusCounts = devices?.reduce((counts: any, device: any) => {
+  const statusCounts = devices && Array.isArray(devices) ? devices.reduce((counts: any, device: any) => {
     counts[device.status] = (counts[device.status] || 0) + 1;
     return counts;
-  }, {}) || {};
+  }, {}) : {};
 
   return (
     <Card>

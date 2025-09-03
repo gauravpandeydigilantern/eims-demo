@@ -101,7 +101,7 @@ function DashboardLayout({ title, subtitle, badge, showLogout = false }: Dashboa
             
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
               <div className="xl:col-span-2 space-y-6">
-                <DeviceMap onDeviceSelect={(id) => {}} />
+                <DeviceMap onDeviceSelect={setSelectedDeviceId} />
                 <DeviceListTable onDeviceSelect={(id) => {}} />
               </div>
               
@@ -2204,7 +2204,7 @@ function ClientDashboard() {
                         <CardDescription>Real-time view of your infrastructure</CardDescription>
                       </CardHeader>
                       <CardContent>
-                        <DeviceMap onDeviceSelect={(id) => {}} />
+                        <DeviceMap onDeviceSelect={setSelectedDeviceId} />
                       </CardContent>
                     </Card>
                     
