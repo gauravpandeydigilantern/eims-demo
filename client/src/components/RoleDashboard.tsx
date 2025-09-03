@@ -127,12 +127,12 @@ function DashboardLayout({ title, subtitle, badge, showLogout = false }: Dashboa
 
 // Mock data for charts
 const performanceData = [
-  { name: 'Jan', devices: 4800, uptime: 99.2, transactions: 2.1, revenue: 1.8 },
-  { name: 'Feb', devices: 4850, uptime: 99.5, transactions: 2.3, revenue: 2.1 },
-  { name: 'Mar', devices: 4920, uptime: 98.8, transactions: 2.8, revenue: 2.4 },
-  { name: 'Apr', devices: 5000, uptime: 99.1, transactions: 3.2, revenue: 2.8 },
-  { name: 'May', devices: 5080, uptime: 99.6, transactions: 3.5, revenue: 3.1 },
-  { name: 'Jun', devices: 5120, uptime: 99.3, transactions: 3.8, revenue: 3.4 }
+  { name: 'Jan', devices: 4800, uptime: 99.2, transactions: 2.1, efficiency: 94.5 },
+  { name: 'Feb', devices: 4850, uptime: 99.5, transactions: 2.3, efficiency: 95.2 },
+  { name: 'Mar', devices: 4920, uptime: 98.8, transactions: 2.8, efficiency: 96.1 },
+  { name: 'Apr', devices: 5000, uptime: 99.1, transactions: 3.2, efficiency: 96.8 },
+  { name: 'May', devices: 5080, uptime: 99.6, transactions: 3.5, efficiency: 97.1 },
+  { name: 'Jun', devices: 5120, uptime: 99.3, transactions: 3.8, efficiency: 97.5 }
 ];
 
 const regionData = [
@@ -356,15 +356,15 @@ function NECGeneralDashboard() {
 
                   <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Revenue Impact</CardTitle>
+                      <CardTitle className="text-sm font-medium">System Efficiency</CardTitle>
                       <Database className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold text-green-600">₹3.4Cr</div>
+                      <div className="text-2xl font-bold text-green-600">97.5%</div>
                       <div className="mt-2">
-                        <Progress value={92} className="h-2" />
+                        <Progress value={97.5} className="h-2" />
                       </div>
-                      <p className="text-xs text-muted-foreground mt-2">Monthly revenue</p>
+                      <p className="text-xs text-muted-foreground mt-2">Overall system efficiency</p>
                     </CardContent>
                   </Card>
                 </div>
@@ -384,7 +384,7 @@ function NECGeneralDashboard() {
                         <Legend />
                         <Line type="monotone" dataKey="uptime" stroke="#8884d8" strokeWidth={2} name="Uptime %" />
                         <Line type="monotone" dataKey="transactions" stroke="#82ca9d" strokeWidth={2} name="Transactions (M)" />
-                        <Line type="monotone" dataKey="revenue" stroke="#ffc658" strokeWidth={2} name="Revenue (Cr)" />
+                        <Line type="monotone" dataKey="efficiency" stroke="#ffc658" strokeWidth={2} name="Efficiency %" />
                       </LineChart>
                     </ResponsiveContainer>
                   </CardContent>
@@ -750,7 +750,7 @@ function NECGeneralDashboard() {
                           <SelectContent>
                             <SelectItem value="performance">Performance Report</SelectItem>
                             <SelectItem value="device-health">Device Health Report</SelectItem>
-                            <SelectItem value="revenue">Revenue Analysis</SelectItem>
+                            <SelectItem value="uptime">Uptime Analysis</SelectItem>
                             <SelectItem value="vendor">Vendor Comparison</SelectItem>
                             <SelectItem value="regional">Regional Analysis</SelectItem>
                             <SelectItem value="custom">Custom Report</SelectItem>
@@ -850,7 +850,7 @@ function NECGeneralDashboard() {
                               device.status,
                               device.uptime.toFixed(1),
                               device.transactions.toLocaleString(),
-                              device.revenue.toFixed(1)
+                              device.efficiency.toFixed(1)
                             ]),
                             startY: 30,
                           });
@@ -982,7 +982,7 @@ function NECGeneralDashboard() {
                                   </div>
                                 </td>
                                 <td className="p-3 text-right font-mono">{device.transactions.toLocaleString()}</td>
-                                <td className="p-3 text-right font-mono text-green-600">₹{device.revenue.toFixed(1)}</td>
+                                <td className="p-3 text-right font-mono text-green-600">{device.efficiency.toFixed(1)}%</td>
                                 <td className="p-3 text-right">
                                   <div className="flex items-center justify-end gap-2">
                                     <Progress value={device.health} className="h-2 w-16" />
@@ -1044,14 +1044,14 @@ function NECGeneralDashboard() {
                             cy="50%"
                             outerRadius={80}
                             fill="#8884d8"
-                            dataKey="revenue"
+                            dataKey="uptime"
                             label={({ vendor, percent }) => `${vendor} ${(percent * 100).toFixed(0)}%`}
                           >
                             {vendorPerformanceData.map((entry, index) => (
                               <Cell key={`cell-${index}`} fill={`hsl(${index * 90}, 70%, 50%)`} />
                             ))}
                           </Pie>
-                          <Tooltip formatter={(value) => [`₹${value}Cr`, 'Revenue']} />
+                          <Tooltip formatter={(value) => [`${value}%`, 'Performance']} />
                         </PieChart>
                       </ResponsiveContainer>
                     </CardContent>
@@ -1659,40 +1659,40 @@ const userActivityData = [
 
 // Client data
 const clientRevenueData = [
-  { month: 'Jan', revenue: 2.1, transactions: 2.8, efficiency: 94.2 },
-  { month: 'Feb', revenue: 2.4, transactions: 3.1, efficiency: 95.1 },
-  { month: 'Mar', revenue: 2.8, transactions: 3.5, efficiency: 96.3 },
-  { month: 'Apr', revenue: 3.1, transactions: 3.8, efficiency: 97.1 },
-  { month: 'May', revenue: 3.4, transactions: 4.2, efficiency: 97.8 },
-  { month: 'Jun', revenue: 3.7, transactions: 4.6, efficiency: 98.2 }
+  { month: 'Jan', uptime: 99.1, transactions: 2.8, efficiency: 94.2 },
+  { month: 'Feb', uptime: 99.4, transactions: 3.1, efficiency: 95.1 },
+  { month: 'Mar', uptime: 98.8, transactions: 3.5, efficiency: 96.3 },
+  { month: 'Apr', uptime: 99.2, transactions: 3.8, efficiency: 97.1 },
+  { month: 'May', uptime: 99.6, transactions: 4.2, efficiency: 97.8 },
+  { month: 'Jun', uptime: 99.3, transactions: 4.6, efficiency: 98.2 }
 ];
 
 // Advanced reporting data
 const detailedReportData = [
-  { id: 'FR_001', name: 'Mumbai Central FR', vendor: 'BCIL', region: 'West', status: 'Online', uptime: 99.8, transactions: 15420, revenue: 2.3, lastUpdate: '2 min ago', health: 95 },
-  { id: 'HHD_002', name: 'Pune Handheld 02', vendor: 'ZEBRA', region: 'West', status: 'Online', uptime: 98.5, transactions: 8950, revenue: 1.7, lastUpdate: '5 min ago', health: 92 },
-  { id: 'FR_003', name: 'Delhi North FR', vendor: 'IMP', region: 'North', status: 'Offline', uptime: 87.2, transactions: 12300, revenue: 1.9, lastUpdate: '2 hrs ago', health: 78 },
-  { id: 'FR_004', name: 'Chennai East FR', vendor: 'ANJ', region: 'South', status: 'Online', uptime: 97.3, transactions: 11200, revenue: 1.8, lastUpdate: '1 min ago', health: 89 },
-  { id: 'HHD_005', name: 'Kolkata Handheld 05', vendor: 'BCIL', region: 'East', status: 'Maintenance', uptime: 94.1, transactions: 7850, revenue: 1.4, lastUpdate: '1 hr ago', health: 85 },
-  { id: 'FR_006', name: 'Bangalore South FR', vendor: 'ZEBRA', region: 'South', status: 'Online', uptime: 99.1, transactions: 14800, revenue: 2.2, lastUpdate: '3 min ago', health: 96 },
-  { id: 'FR_007', name: 'Hyderabad Central FR', vendor: 'IMP', region: 'South', status: 'Online', uptime: 96.8, transactions: 13500, revenue: 2.0, lastUpdate: '4 min ago', health: 91 },
-  { id: 'HHD_008', name: 'Ahmedabad Handheld 08', vendor: 'ANJ', region: 'West', status: 'Online', uptime: 95.7, transactions: 9200, revenue: 1.6, lastUpdate: '6 min ago', health: 88 }
+  { id: 'FR_001', name: 'Mumbai Central FR', vendor: 'BCIL', region: 'West', status: 'Online', uptime: 99.8, transactions: 15420, efficiency: 96.2, lastUpdate: '2 min ago', health: 95 },
+  { id: 'HHD_002', name: 'Pune Handheld 02', vendor: 'ZEBRA', region: 'West', status: 'Online', uptime: 98.5, transactions: 8950, efficiency: 94.7, lastUpdate: '5 min ago', health: 92 },
+  { id: 'FR_003', name: 'Delhi North FR', vendor: 'IMP', region: 'North', status: 'Offline', uptime: 87.2, transactions: 12300, efficiency: 89.9, lastUpdate: '2 hrs ago', health: 78 },
+  { id: 'FR_004', name: 'Chennai East FR', vendor: 'ANJ', region: 'South', status: 'Online', uptime: 97.3, transactions: 11200, efficiency: 95.8, lastUpdate: '1 min ago', health: 89 },
+  { id: 'HHD_005', name: 'Kolkata Handheld 05', vendor: 'BCIL', region: 'East', status: 'Maintenance', uptime: 94.1, transactions: 7850, efficiency: 92.4, lastUpdate: '1 hr ago', health: 85 },
+  { id: 'FR_006', name: 'Bangalore South FR', vendor: 'ZEBRA', region: 'South', status: 'Online', uptime: 99.1, transactions: 14800, efficiency: 97.2, lastUpdate: '3 min ago', health: 96 },
+  { id: 'FR_007', name: 'Hyderabad Central FR', vendor: 'IMP', region: 'South', status: 'Online', uptime: 96.8, transactions: 13500, efficiency: 95.0, lastUpdate: '4 min ago', health: 91 },
+  { id: 'HHD_008', name: 'Ahmedabad Handheld 08', vendor: 'ANJ', region: 'West', status: 'Online', uptime: 95.7, transactions: 9200, efficiency: 93.6, lastUpdate: '6 min ago', health: 88 }
 ];
 
 const monthlyComparisonData = [
-  { month: 'Jan', totalDevices: 4800, activeDevices: 4680, revenue: 2.1, transactions: 2.8, downtime: 4.2, alerts: 45 },
-  { month: 'Feb', totalDevices: 4850, activeDevices: 4730, revenue: 2.4, transactions: 3.1, downtime: 3.8, alerts: 38 },
-  { month: 'Mar', totalDevices: 4920, activeDevices: 4820, revenue: 2.8, transactions: 3.5, downtime: 2.9, alerts: 32 },
-  { month: 'Apr', totalDevices: 5000, activeDevices: 4890, revenue: 3.1, transactions: 3.8, downtime: 3.1, alerts: 28 },
-  { month: 'May', totalDevices: 5080, activeDevices: 4970, revenue: 3.4, transactions: 4.2, downtime: 2.2, alerts: 25 },
-  { month: 'Jun', totalDevices: 5120, activeDevices: 5010, revenue: 3.7, transactions: 4.6, downtime: 2.1, alerts: 22 }
+  { month: 'Jan', totalDevices: 4800, activeDevices: 4680, uptime: 94.1, transactions: 2.8, downtime: 4.2, alerts: 45 },
+  { month: 'Feb', totalDevices: 4850, activeDevices: 4730, uptime: 94.8, transactions: 3.1, downtime: 3.8, alerts: 38 },
+  { month: 'Mar', totalDevices: 4920, activeDevices: 4820, uptime: 95.7, transactions: 3.5, downtime: 2.9, alerts: 32 },
+  { month: 'Apr', totalDevices: 5000, activeDevices: 4890, uptime: 96.1, transactions: 3.8, downtime: 3.1, alerts: 28 },
+  { month: 'May', totalDevices: 5080, activeDevices: 4970, uptime: 96.8, transactions: 4.2, downtime: 2.2, alerts: 25 },
+  { month: 'Jun', totalDevices: 5120, activeDevices: 5010, uptime: 97.3, transactions: 4.6, downtime: 2.1, alerts: 22 }
 ];
 
 const vendorPerformanceData = [
-  { vendor: 'BCIL', devices: 2890, uptime: 98.9, efficiency: 96.2, revenue: 45.8, satisfaction: 94 },
-  { vendor: 'ZEBRA', devices: 1234, uptime: 97.8, efficiency: 95.1, revenue: 32.1, satisfaction: 92 },
-  { vendor: 'IMP', devices: 756, uptime: 96.5, efficiency: 93.8, revenue: 18.7, satisfaction: 89 },
-  { vendor: 'ANJ', devices: 240, uptime: 95.2, efficiency: 91.5, revenue: 12.4, satisfaction: 87 }
+  { vendor: 'BCIL', devices: 2890, uptime: 98.9, efficiency: 96.2, performance: 94.8, satisfaction: 94 },
+  { vendor: 'ZEBRA', devices: 1234, uptime: 97.8, efficiency: 95.1, performance: 93.1, satisfaction: 92 },
+  { vendor: 'IMP', devices: 756, uptime: 96.5, efficiency: 93.8, performance: 91.7, satisfaction: 89 },
+  { vendor: 'ANJ', devices: 240, uptime: 95.2, efficiency: 91.5, performance: 89.4, satisfaction: 87 }
 ];
 
 const serviceMetrics = [
@@ -2349,7 +2349,7 @@ function ClientDashboard() {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="business-performance">Business Performance</SelectItem>
-                            <SelectItem value="financial-summary">Financial Summary</SelectItem>
+                            <SelectItem value="performance-summary">Performance Summary</SelectItem>
                             <SelectItem value="service-levels">Service Level Reports</SelectItem>
                             <SelectItem value="efficiency-analysis">Efficiency Analysis</SelectItem>
                             <SelectItem value="trends-forecast">Trends & Forecasting</SelectItem>
@@ -2396,7 +2396,7 @@ function ClientDashboard() {
                         onClick={() => {
                           const businessData = clientRevenueData.map(data => ({
                             Month: data.month,
-                            'Revenue (Cr)': data.revenue,
+                            'Uptime %': data.uptime,
                             'Transactions (M)': data.transactions,
                             'Efficiency (%)': data.efficiency
                           }));
@@ -2415,7 +2415,7 @@ function ClientDashboard() {
                       <CSVLink
                         data={clientRevenueData.map(data => ({
                           Month: data.month,
-                          'Revenue (Cr)': data.revenue,
+                          'Uptime %': data.uptime,
                           'Transactions (M)': data.transactions,
                           'Efficiency (%)': data.efficiency
                         }))}
@@ -2436,7 +2436,7 @@ function ClientDashboard() {
                             head: [['Month', 'Revenue (Cr)', 'Transactions (M)', 'Efficiency (%)']],
                             body: clientRevenueData.map(data => [
                               data.month,
-                              '₹' + data.revenue.toFixed(1),
+                              data.uptime.toFixed(1) + '%',
                               data.transactions.toFixed(1) + 'M',
                               data.efficiency.toFixed(1) + '%'
                             ]),
@@ -2477,7 +2477,7 @@ function ClientDashboard() {
                           <Tooltip />
                           <Legend />
                           <Bar yAxisId="left" dataKey="transactions" fill="#3b82f6" name="Transactions (M)" />
-                          <Line yAxisId="right" type="monotone" dataKey="revenue" stroke="#22c55e" strokeWidth={3} name="Revenue (Cr)" />
+                          <Line yAxisId="right" type="monotone" dataKey="uptime" stroke="#22c55e" strokeWidth={3} name="Uptime %" />
                           <Line yAxisId="right" type="monotone" dataKey="efficiency" stroke="#f59e0b" strokeWidth={3} name="Efficiency %" />
                         </ComposedChart>
                       </ResponsiveContainer>
@@ -2511,11 +2511,11 @@ function ClientDashboard() {
                         
                         <div className="space-y-2">
                           <div className="flex justify-between items-center">
-                            <span className="text-sm font-medium">Monthly Revenue</span>
-                            <span className="text-2xl font-bold text-green-600">₹3.7Cr</span>
+                            <span className="text-sm font-medium">System Uptime</span>
+                            <span className="text-2xl font-bold text-green-600">97.5%</span>
                           </div>
                           <Progress value={103} className="h-3" />
-                          <div className="text-xs text-muted-foreground">Target: ₹3.6Cr | Current: 103% of target</div>
+                          <div className="text-xs text-muted-foreground">Target: 97.0% | Current: 100.5% of target</div>
                         </div>
 
                         <div className="space-y-2">
@@ -2535,8 +2535,8 @@ function ClientDashboard() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   <Card>
                     <CardHeader>
-                      <CardTitle>Revenue Distribution</CardTitle>
-                      <CardDescription>Monthly revenue breakdown</CardDescription>
+                      <CardTitle>Performance Distribution</CardTitle>
+                      <CardDescription>Monthly performance breakdown</CardDescription>
                     </CardHeader>
                     <CardContent>
                       <ResponsiveContainer width="100%" height={250}>
@@ -2547,14 +2547,14 @@ function ClientDashboard() {
                             cy="50%"
                             outerRadius={80}
                             fill="#8884d8"
-                            dataKey="revenue"
+                            dataKey="uptime"
                             label={({ month, percent }) => `${month} ${(percent * 100).toFixed(0)}%`}
                           >
                             {clientRevenueData.map((entry, index) => (
                               <Cell key={`cell-${index}`} fill={`hsl(${index * 60}, 70%, 50%)`} />
                             ))}
                           </Pie>
-                          <Tooltip formatter={(value) => [`₹${value}Cr`, 'Revenue']} />
+                          <Tooltip formatter={(value) => [`${value}%`, 'Performance']} />
                         </PieChart>
                       </ResponsiveContainer>
                     </CardContent>
@@ -2631,12 +2631,12 @@ function ClientDashboard() {
                           <tbody>
                             {clientRevenueData.map((data, index) => {
                               const prevData = index > 0 ? clientRevenueData[index - 1] : null;
-                              const growthRate = prevData ? ((data.revenue - prevData.revenue) / prevData.revenue * 100) : 0;
+                              const growthRate = prevData ? ((data.uptime - prevData.uptime) / prevData.uptime * 100) : 0;
                               
                               return (
                                 <tr key={data.month} className={index % 2 === 0 ? 'bg-background' : 'bg-muted/25'} data-testid={`row-business-${data.month}`}>
                                   <td className="p-3 font-medium">{data.month} 2024</td>
-                                  <td className="p-3 text-right font-mono text-green-600">₹{data.revenue.toFixed(1)}</td>
+                                  <td className="p-3 text-right font-mono text-green-600">{data.uptime.toFixed(1)}%</td>
                                   <td className="p-3 text-right font-mono">{data.transactions.toFixed(1)}M</td>
                                   <td className="p-3 text-right">
                                     <div className="flex items-center justify-end gap-2">
