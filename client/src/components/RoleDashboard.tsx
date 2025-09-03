@@ -28,7 +28,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Shield, MapPin, Users, Settings, Eye, Monitor, AlertTriangle, BarChart3, Activity, TrendingUp, Database, Zap, Cpu, Thermometer, Wifi, Battery, Globe, Download, FileText, Table, Calendar, Filter, Search, Edit, Trash2 } from "lucide-react";
+import { Shield, MapPin, Users, Settings, Eye, Monitor, AlertTriangle, BarChart3, Activity, TrendingUp, Database, Zap, Cpu, Thermometer, Wifi, Battery, Globe, Download, FileText, Table, Calendar, Filter, Search, Edit, Trash2, MessageSquare, BookOpen, Palette, UserPlus, CheckCircle, Target, Layers, Command, Smartphone, Cloud, RotateCcw, Languages, Accessibility, Bell, RefreshCw, Clock, TrendingDown } from "lucide-react";
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area, ComposedChart } from "recharts";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import * as XLSX from 'xlsx';
@@ -251,8 +251,670 @@ function NECGeneralDashboard() {
                 )}
               </TabsList>
 
-              {/* Overview Tab - NLDS Style */}
+              {/* Overview Tab - Role-Specific Professional Dashboard */}
               <TabsContent value="overview" className="space-y-6">
+                {/* Role-Specific Enhanced Overview */}
+                {user?.role === 'NEC_GENERAL' && (
+                  <>
+                    {/* NEC General - Global System Health Widget */}
+                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                      <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border-blue-200">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm font-medium flex items-center gap-2">
+                            <Globe className="w-4 h-4" />
+                            Global Health
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-3xl font-bold text-blue-600">98.7%</div>
+                          <div className="text-xs text-blue-600 mt-1">All Regions</div>
+                          <Progress value={98.7} className="h-2 mt-2" />
+                        </CardContent>
+                      </Card>
+
+                      <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border-green-200">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm font-medium flex items-center gap-2">
+                            <Target className="w-4 h-4" />
+                            Critical Alerts
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-3xl font-bold text-green-600">3</div>
+                          <div className="text-xs text-green-600 mt-1">Active Issues</div>
+                          <Button size="sm" className="mt-2 h-6 text-xs">
+                            View All
+                          </Button>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 border-purple-200">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm font-medium flex items-center gap-2">
+                            <Users className="w-4 h-4" />
+                            Active Users
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-3xl font-bold text-purple-600">47</div>
+                          <div className="text-xs text-purple-600 mt-1">Online Now</div>
+                          <Button size="sm" variant="outline" className="mt-2 h-6 text-xs">
+                            <UserPlus className="w-3 h-3 mr-1" />
+                            Manage
+                          </Button>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20 border-amber-200">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm font-medium flex items-center gap-2">
+                            <Command className="w-4 h-4" />
+                            Emergency Center
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <Button className="w-full bg-red-600 hover:bg-red-700 text-white h-8 text-xs">
+                            <AlertTriangle className="w-3 h-3 mr-1" />
+                            Emergency Command
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    {/* Executive KPI Cards with Drill-down */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <BarChart3 className="w-5 h-5" />
+                          Executive KPI Dashboard
+                        </CardTitle>
+                        <CardDescription>Comprehensive performance metrics with drill-down capabilities</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium">Regional Performance</span>
+                              <Button size="sm" variant="ghost">
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                            </div>
+                            <ResponsiveContainer width="100%" height={120}>
+                              <BarChart data={[
+                                { region: 'MUM', performance: 97 },
+                                { region: 'DEL', performance: 94 },
+                                { region: 'BNG', performance: 98 },
+                                { region: 'CHN', performance: 96 }
+                              ]}>
+                                <Bar dataKey="performance" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                                <XAxis dataKey="region" tick={{ fontSize: 10 }} />
+                                <YAxis domain={[90, 100]} tick={{ fontSize: 10 }} />
+                                <Tooltip />
+                              </BarChart>
+                            </ResponsiveContainer>
+                          </div>
+
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium">Revenue Trends</span>
+                              <Button size="sm" variant="ghost">
+                                <TrendingUp className="w-4 h-4" />
+                              </Button>
+                            </div>
+                            <ResponsiveContainer width="100%" height={120}>
+                              <LineChart data={[
+                                { month: 'Jan', revenue: 2.1 },
+                                { month: 'Feb', revenue: 2.3 },
+                                { month: 'Mar', revenue: 2.5 },
+                                { month: 'Apr', revenue: 2.4 },
+                                { month: 'May', revenue: 2.6 }
+                              ]}>
+                                <Line type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2} />
+                                <XAxis dataKey="month" tick={{ fontSize: 10 }} />
+                                <YAxis tick={{ fontSize: 10 }} />
+                                <Tooltip formatter={(value) => [`₹${value}Cr`, 'Revenue']} />
+                              </LineChart>
+                            </ResponsiveContainer>
+                          </div>
+
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium">Device Health Distribution</span>
+                              <Button size="sm" variant="ghost">
+                                <Activity className="w-4 h-4" />
+                              </Button>
+                            </div>
+                            <ResponsiveContainer width="100%" height={120}>
+                              <PieChart>
+                                <Pie
+                                  data={[
+                                    { name: 'Excellent', value: 65, color: '#10b981' },
+                                    { name: 'Good', value: 25, color: '#3b82f6' },
+                                    { name: 'Warning', value: 8, color: '#f59e0b' },
+                                    { name: 'Critical', value: 2, color: '#ef4444' }
+                                  ]}
+                                  cx="50%"
+                                  cy="50%"
+                                  outerRadius={40}
+                                  innerRadius={20}
+                                  dataKey="value"
+                                >
+                                  {[
+                                    { name: 'Excellent', value: 65, color: '#10b981' },
+                                    { name: 'Good', value: 25, color: '#3b82f6' },
+                                    { name: 'Warning', value: 8, color: '#f59e0b' },
+                                    { name: 'Critical', value: 2, color: '#ef4444' }
+                                  ].map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={entry.color} />
+                                  ))}
+                                </Pie>
+                                <Tooltip />
+                              </PieChart>
+                            </ResponsiveContainer>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Dashboard Customization Panel */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Palette className="w-5 h-5" />
+                          Dashboard Personalization
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex flex-wrap gap-4 items-center">
+                          <div className="flex items-center gap-2">
+                            <Palette className="w-4 h-4" />
+                            <Select defaultValue="professional">
+                              <SelectTrigger className="w-32">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="professional">Professional</SelectItem>
+                                <SelectItem value="dark">Dark Mode</SelectItem>
+                                <SelectItem value="corporate">Corporate</SelectItem>
+                                <SelectItem value="modern">Modern</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            <Layers className="w-4 h-4" />
+                            <Button size="sm" variant="outline">
+                              Customize Layout
+                            </Button>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <Bell className="w-4 h-4" />
+                            <Button size="sm" variant="outline">
+                              Alert Preferences
+                            </Button>
+                          </div>
+
+                          <Button size="sm" className="ml-auto">
+                            <Download className="w-4 h-4 mr-1" />
+                            Export Config
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </>
+                )}
+
+                {user?.role === 'NEC_ENGINEER' && (
+                  <>
+                    {/* NEC Engineer - Regional Focus Dashboard */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                      <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border-blue-200">
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2 text-lg">
+                            <MapPin className="w-5 h-5" />
+                            Regional Command Center
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-4">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm">Active Devices</span>
+                              <span className="font-bold text-blue-600">23/25</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm">Pending Tasks</span>
+                              <Badge variant="outline" className="bg-amber-50 text-amber-700">7</Badge>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm">Weather Alerts</span>
+                              <Badge variant="outline" className="bg-red-50 text-red-700">2</Badge>
+                            </div>
+                            <Button className="w-full">
+                              <Command className="w-4 h-4 mr-2" />
+                              Open Command Queue
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border-green-200">
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2 text-lg">
+                            <MessageSquare className="w-5 h-5" />
+                            Team Collaboration
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            <div className="text-sm bg-white dark:bg-gray-800 p-2 rounded border">
+                              <div className="font-medium text-green-600">John: Device FR_MUM_01 back online</div>
+                              <div className="text-xs text-muted-foreground">2 min ago</div>
+                            </div>
+                            <div className="text-sm bg-white dark:bg-gray-800 p-2 rounded border">
+                              <div className="font-medium text-blue-600">Sarah: Maintenance scheduled</div>
+                              <div className="text-xs text-muted-foreground">15 min ago</div>
+                            </div>
+                            <Button size="sm" className="w-full">
+                              <MessageSquare className="w-3 h-3 mr-1" />
+                              Open Chat
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 border-purple-200">
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2 text-lg">
+                            <Smartphone className="w-5 h-5" />
+                            Mobile Sync Status
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm">Offline Data</span>
+                              <Badge className="bg-green-100 text-green-800">Synced</Badge>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm">Field Reports</span>
+                              <Badge className="bg-blue-100 text-blue-800">3 Pending</Badge>
+                            </div>
+                            <Progress value={85} className="h-2" />
+                            <div className="text-xs text-muted-foreground">85% sync completed</div>
+                            <Button size="sm" className="w-full">
+                              <RefreshCw className="w-3 h-3 mr-1" />
+                              Force Sync
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    {/* Enhanced Regional Map with Traffic/Weather */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Globe className="w-5 h-5" />
+                          Enhanced Regional Map with Traffic & Weather Overlays
+                        </CardTitle>
+                        <CardDescription>Interactive map with real-time traffic, weather, and maintenance alerts</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-4">
+                          <Button size="sm" variant="outline" className="flex items-center gap-2">
+                            <Cloud className="w-4 h-4" />
+                            Weather Layer
+                          </Button>
+                          <Button size="sm" variant="outline" className="flex items-center gap-2">
+                            <MapPin className="w-4 h-4" />
+                            Traffic Layer
+                          </Button>
+                          <Button size="sm" variant="outline" className="flex items-center gap-2">
+                            <Settings className="w-4 h-4" />
+                            Maintenance Layer
+                          </Button>
+                          <Button size="sm" variant="outline" className="flex items-center gap-2">
+                            <AlertTriangle className="w-4 h-4" />
+                            Alert Layer
+                          </Button>
+                        </div>
+                        <div className="h-80 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-center">
+                          <div className="text-center">
+                            <MapPin className="w-12 h-12 mx-auto text-muted-foreground mb-2" />
+                            <p className="text-muted-foreground">Interactive Map View</p>
+                            <p className="text-sm text-muted-foreground">Regional devices with live overlays</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Training Resources Panel */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <BookOpen className="w-5 h-5" />
+                          Embedded Training & Resources
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <Button variant="outline" className="h-20 flex flex-col items-center justify-center">
+                            <BookOpen className="w-6 h-6 mb-2" />
+                            <span>Device Manuals</span>
+                          </Button>
+                          <Button variant="outline" className="h-20 flex flex-col items-center justify-center">
+                            <Settings className="w-6 h-6 mb-2" />
+                            <span>Troubleshooting</span>
+                          </Button>
+                          <Button variant="outline" className="h-20 flex flex-col items-center justify-center">
+                            <MessageSquare className="w-6 h-6 mb-2" />
+                            <span>Support Chat</span>
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </>
+                )}
+
+                {user?.role === 'NEC_ADMIN' && (
+                  <>
+                    {/* NEC Admin - Device Management Focus */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2">
+                            <Database className="w-5 h-5" />
+                            Advanced Device Inventory
+                          </CardTitle>
+                          <CardDescription>Bulk operations and configuration management</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-4">
+                            <div className="flex gap-2">
+                              <Input placeholder="Search devices..." className="flex-1" />
+                              <Button size="sm" variant="outline">
+                                <Filter className="w-4 h-4" />
+                              </Button>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              <Button size="sm" variant="outline">
+                                <Edit className="w-3 h-3 mr-1" />
+                                Bulk Edit
+                              </Button>
+                              <Button size="sm" variant="outline">
+                                <Download className="w-3 h-3 mr-1" />
+                                Export Config
+                              </Button>
+                              <Button size="sm" variant="outline">
+                                <RefreshCw className="w-3 h-3 mr-1" />
+                                Sync All
+                              </Button>
+                            </div>
+                            <div className="text-sm space-y-2">
+                              <div className="flex justify-between">
+                                <span>Total Devices:</span>
+                                <span className="font-medium">88</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Pending Updates:</span>
+                                <Badge variant="outline">12</Badge>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Config Versions:</span>
+                                <Badge variant="outline">v2.3.1</Badge>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2">
+                            <Calendar className="w-5 h-5" />
+                            Maintenance Calendar
+                          </CardTitle>
+                          <CardDescription>Scheduled maintenance with resource allocation</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-7 gap-1 text-center text-xs">
+                              {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
+                                <div key={day} className="font-medium p-2">{day}</div>
+                              ))}
+                              {Array.from({ length: 35 }, (_, i) => (
+                                <div key={i} className="p-2 h-8 bg-slate-50 dark:bg-slate-800 rounded text-xs flex items-center justify-center">
+                                  {i % 7 === 0 && i < 28 ? (
+                                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                  ) : (
+                                    <span>{((i % 30) + 1)}</span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2 text-sm">
+                                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                                <span>Scheduled maintenance</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-sm">
+                                <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                                <span>Critical updates</span>
+                              </div>
+                            </div>
+                            <Button className="w-full">
+                              <Calendar className="w-4 h-4 mr-2" />
+                              Schedule Maintenance
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    {/* Alert Management Hub */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <AlertTriangle className="w-5 h-5" />
+                          Alert Management Hub
+                        </CardTitle>
+                        <CardDescription>Prioritization and automated response configuration</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                          <div className="space-y-3">
+                            <div className="font-medium">Critical Alerts</div>
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between p-2 bg-red-50 dark:bg-red-900/20 rounded">
+                                <span className="text-sm">Device Offline</span>
+                                <Badge className="bg-red-100 text-red-800">3</Badge>
+                              </div>
+                              <div className="flex items-center justify-between p-2 bg-amber-50 dark:bg-amber-900/20 rounded">
+                                <span className="text-sm">High Temperature</span>
+                                <Badge className="bg-amber-100 text-amber-800">7</Badge>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-3">
+                            <div className="font-medium">Auto-Response Rules</div>
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <CheckCircle className="w-4 h-4 text-green-600" />
+                                <span className="text-sm">Auto-restart on connection loss</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <CheckCircle className="w-4 h-4 text-green-600" />
+                                <span className="text-sm">Email escalation after 5min</span>
+                              </div>
+                              <Button size="sm" variant="outline">
+                                <Settings className="w-3 h-3 mr-1" />
+                                Configure Rules
+                              </Button>
+                            </div>
+                          </div>
+
+                          <div className="space-y-3">
+                            <div className="font-medium">Integration Status</div>
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm">Vendor APIs</span>
+                                <Badge className="bg-green-100 text-green-800">Connected</Badge>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm">Weather Service</span>
+                                <Badge className="bg-green-100 text-green-800">Active</Badge>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm">Email Gateway</span>
+                                <Badge className="bg-yellow-100 text-yellow-800">Limited</Badge>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </>
+                )}
+
+                {user?.role === 'CLIENT' && (
+                  <>
+                    {/* CLIENT - Read-Only Professional Dashboard */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                      <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border-blue-200">
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2">
+                            <Eye className="w-5 h-5" />
+                            Customizable Filters
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            <Select defaultValue="all-devices">
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all-devices">All Devices</SelectItem>
+                                <SelectItem value="my-region">My Region Only</SelectItem>
+                                <SelectItem value="critical-only">Critical Issues</SelectItem>
+                                <SelectItem value="high-traffic">High Traffic</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Button size="sm" className="w-full">
+                              <Download className="w-3 h-3 mr-1" />
+                              Save Filter Preset
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border-green-200">
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2">
+                            <Bell className="w-5 h-5" />
+                            Notification Center
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            <div className="text-sm">
+                              <div className="flex items-center gap-2">
+                                <CheckCircle className="w-4 h-4 text-green-600" />
+                                <span>Email alerts for status changes</span>
+                              </div>
+                            </div>
+                            <div className="text-sm">
+                              <div className="flex items-center gap-2">
+                                <CheckCircle className="w-4 h-4 text-green-600" />
+                                <span>Weekly performance reports</span>
+                              </div>
+                            </div>
+                            <Button size="sm" className="w-full">
+                              <Settings className="w-3 h-3 mr-1" />
+                              Customize Alerts
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 border-purple-200">
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2">
+                            <BookOpen className="w-5 h-5" />
+                            Knowledge Base
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            <Input placeholder="Search FAQs..." className="h-8" />
+                            <div className="space-y-2 text-sm">
+                              <Button variant="ghost" size="sm" className="w-full justify-start h-6">
+                                How to read device status?
+                              </Button>
+                              <Button variant="ghost" size="sm" className="w-full justify-start h-6">
+                                Understanding alerts
+                              </Button>
+                              <Button variant="ghost" size="sm" className="w-full justify-start h-6">
+                                Report generation
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    {/* Accessibility Features */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Accessibility className="w-5 h-5" />
+                          Accessibility & Language Options
+                        </CardTitle>
+                        <CardDescription>Enhanced accessibility and multi-language support</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex flex-wrap gap-4 items-center">
+                          <div className="flex items-center gap-2">
+                            <Accessibility className="w-4 h-4" />
+                            <Button size="sm" variant="outline">
+                              High Contrast Mode
+                            </Button>
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            <Languages className="w-4 h-4" />
+                            <Select defaultValue="en">
+                              <SelectTrigger className="w-32">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="en">English</SelectItem>
+                                <SelectItem value="hi">हिंदी</SelectItem>
+                                <SelectItem value="ta">தமிழ்</SelectItem>
+                                <SelectItem value="te">తెలుగు</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <Settings className="w-4 h-4" />
+                            <Button size="sm" variant="outline">
+                              Font Size: Normal
+                            </Button>
+                          </div>
+
+                          <Button size="sm" className="ml-auto">
+                            Save Preferences
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </>
+                )}
+                
+                {/* Common components for all roles */}
                 <RoleSpecificStats />
                 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -275,62 +937,196 @@ function NECGeneralDashboard() {
                 <EnhancedDeviceDataView />
               </TabsContent>
 
-              {/* Performance Tab */}
+              {/* Performance Tab - Enhanced Professional Analytics */}
               <TabsContent value="performance" className="space-y-6">
+                {/* Real-time Performance Metrics */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                  <Card>
+                  <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border-green-200">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">System Uptime</CardTitle>
-                      <Activity className="h-4 w-4 text-muted-foreground" />
+                      <Activity className="h-4 w-4 text-green-600" />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold text-green-600">99.3%</div>
-                      <div className="mt-2">
-                        <Progress value={99.3} className="h-2" />
+                      <div className="text-3xl font-bold text-green-600">99.7%</div>
+                      <div className="mt-3">
+                        <Progress value={99.7} className="h-3" />
                       </div>
-                      <p className="text-xs text-muted-foreground mt-2">+0.2% from last month</p>
+                      <div className="flex items-center mt-2 text-xs">
+                        <TrendingUp className="w-3 h-3 text-green-600 mr-1" />
+                        <span className="text-green-600">+0.4% vs last month</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">Target: 99.5%</p>
                     </CardContent>
                   </Card>
 
-                  <Card>
+                  <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border-blue-200">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Transaction Rate</CardTitle>
-                      <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                      <CardTitle className="text-sm font-medium">Daily Transactions</CardTitle>
+                      <TrendingUp className="h-4 w-4 text-blue-600" />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold">3.2M/day</div>
-                      <div className="mt-2">
-                        <Progress value={85} className="h-2" />
+                      <div className="text-3xl font-bold text-blue-600">4.7M</div>
+                      <div className="mt-3">
+                        <Progress value={94} className="h-3" />
                       </div>
-                      <p className="text-xs text-muted-foreground mt-2">+12% from last week</p>
+                      <div className="flex items-center mt-2 text-xs">
+                        <TrendingUp className="w-3 h-3 text-blue-600 mr-1" />
+                        <span className="text-blue-600">+18% vs last week</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">Peak: 5.2M today</p>
                     </CardContent>
                   </Card>
 
-                  <Card>
+                  <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 border-purple-200">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Health Score</CardTitle>
-                      <Cpu className="h-4 w-4 text-muted-foreground" />
+                      <CardTitle className="text-sm font-medium">Avg Health Score</CardTitle>
+                      <Cpu className="h-4 w-4 text-purple-600" />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold text-blue-600">87/100</div>
-                      <div className="mt-2">
-                        <Progress value={87} className="h-2" />
+                      <div className="text-3xl font-bold text-purple-600">91/100</div>
+                      <div className="mt-3">
+                        <Progress value={91} className="h-3" />
                       </div>
-                      <p className="text-xs text-muted-foreground mt-2">Good overall health</p>
+                      <div className="flex items-center mt-2 text-xs">
+                        <TrendingUp className="w-3 h-3 text-purple-600 mr-1" />
+                        <span className="text-purple-600">+4 points this week</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">Excellent health</p>
                     </CardContent>
                   </Card>
 
-                  <Card>
+                  <Card className="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20 border-amber-200">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">System Efficiency</CardTitle>
-                      <Database className="h-4 w-4 text-muted-foreground" />
+                      <Database className="h-4 w-4 text-amber-600" />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold text-green-600">97.5%</div>
-                      <div className="mt-2">
-                        <Progress value={97.5} className="h-2" />
+                      <div className="text-3xl font-bold text-amber-600">96.8%</div>
+                      <div className="mt-3">
+                        <Progress value={96.8} className="h-3" />
                       </div>
-                      <p className="text-xs text-muted-foreground mt-2">Overall system efficiency</p>
+                      <div className="flex items-center mt-2 text-xs">
+                        <TrendingUp className="w-3 h-3 text-amber-600 mr-1" />
+                        <span className="text-amber-600">+2.1% improvement</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">Above target</p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Advanced Performance Analytics */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <BarChart3 className="w-5 h-5" />
+                        Real-time System Performance
+                      </CardTitle>
+                      <CardDescription>Live monitoring of critical system metrics</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-6">
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-center">
+                            <span className="flex items-center gap-2 font-medium">
+                              <Cpu className="w-4 h-4" />CPU Usage
+                            </span>
+                            <div className="text-right">
+                              <span className="font-mono text-lg">34%</span>
+                              <div className="text-xs text-green-600">Normal</div>
+                            </div>
+                          </div>
+                          <Progress value={34} className="h-3" />
+                        </div>
+                        
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-center">
+                            <span className="flex items-center gap-2 font-medium">
+                              <Database className="w-4 h-4" />Memory Usage
+                            </span>
+                            <div className="text-right">
+                              <span className="font-mono text-lg">67%</span>
+                              <div className="text-xs text-yellow-600">Moderate</div>
+                            </div>
+                          </div>
+                          <Progress value={67} className="h-3" />
+                        </div>
+
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-center">
+                            <span className="flex items-center gap-2 font-medium">
+                              <Wifi className="w-4 h-4" />Network Load
+                            </span>
+                            <div className="text-right">
+                              <span className="font-mono text-lg">23%</span>
+                              <div className="text-xs text-green-600">Optimal</div>
+                            </div>
+                          </div>
+                          <Progress value={23} className="h-3" />
+                        </div>
+
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-center">
+                            <span className="flex items-center gap-2 font-medium">
+                              <Thermometer className="w-4 h-4" />Avg Temperature
+                            </span>
+                            <div className="text-right">
+                              <span className="font-mono text-lg">42°C</span>
+                              <div className="text-xs text-green-600">Normal</div>
+                            </div>
+                          </div>
+                          <Progress value={70} className="h-3" />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <AlertTriangle className="w-5 h-5" />
+                        Performance Alerts & Issues
+                      </CardTitle>
+                      <CardDescription>Critical performance indicators requiring attention</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="flex items-start gap-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 rounded-lg">
+                          <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5" />
+                          <div className="flex-1">
+                            <div className="font-medium text-red-800 dark:text-red-200">High Memory Usage</div>
+                            <div className="text-sm text-red-600 dark:text-red-300">Mumbai Zone devices averaging 89% RAM usage</div>
+                            <div className="text-xs text-red-500 mt-1">Last 15 minutes</div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 rounded-lg">
+                          <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5" />
+                          <div className="flex-1">
+                            <div className="font-medium text-yellow-800 dark:text-yellow-200">Network Latency Spike</div>
+                            <div className="text-sm text-yellow-600 dark:text-yellow-300">Increased response times in Delhi region</div>
+                            <div className="text-xs text-yellow-500 mt-1">2 hours ago</div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 rounded-lg">
+                          <Monitor className="w-5 h-5 text-blue-600 mt-0.5" />
+                          <div className="flex-1">
+                            <div className="font-medium text-blue-800 dark:text-blue-200">Scheduled Maintenance</div>
+                            <div className="text-sm text-blue-600 dark:text-blue-300">3 devices in Bangalore undergoing updates</div>
+                            <div className="text-xs text-blue-500 mt-1">In progress</div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 rounded-lg">
+                          <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
+                          <div className="flex-1">
+                            <div className="font-medium text-green-800 dark:text-green-200">Performance Optimized</div>
+                            <div className="text-sm text-green-600 dark:text-green-300">Chennai zone showing 15% efficiency gain</div>
+                            <div className="text-xs text-green-500 mt-1">Today</div>
+                          </div>
+                        </div>
+                      </div>
                     </CardContent>
                   </Card>
                 </div>
@@ -409,8 +1205,187 @@ function NECGeneralDashboard() {
                 </div>
               </TabsContent>
 
-              {/* Analytics Tab */}
+              {/* Analytics Tab - Professional Business Intelligence */}
               <TabsContent value="analytics" className="space-y-6">
+                {/* Executive Summary Dashboard */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <Card className="lg:col-span-2">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <BarChart3 className="w-5 h-5" />
+                        Device Performance Analytics
+                      </CardTitle>
+                      <CardDescription>Comprehensive performance metrics across all regions</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={350}>
+                        <ComposedChart data={performanceData}>
+                          <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                          <XAxis 
+                            dataKey="name" 
+                            tick={{ fontSize: 12 }}
+                            tickLine={{ stroke: '#e5e7eb' }}
+                          />
+                          <YAxis 
+                            yAxisId="left" 
+                            tick={{ fontSize: 12 }}
+                            tickLine={{ stroke: '#e5e7eb' }}
+                          />
+                          <YAxis 
+                            yAxisId="right" 
+                            orientation="right"
+                            tick={{ fontSize: 12 }}
+                            tickLine={{ stroke: '#e5e7eb' }}
+                          />
+                          <Tooltip 
+                            contentStyle={{
+                              backgroundColor: '#fff',
+                              border: '1px solid #e5e7eb',
+                              borderRadius: '8px',
+                              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                            }}
+                          />
+                          <Legend />
+                          <Bar yAxisId="left" dataKey="uptime" fill="#3b82f6" name="Uptime %" />
+                          <Bar yAxisId="left" dataKey="efficiency" fill="#10b981" name="Efficiency %" />
+                          <Line yAxisId="right" type="monotone" dataKey="transactions" stroke="#f59e0b" strokeWidth={3} name="Transactions (M)" />
+                        </ComposedChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <TrendingUp className="w-5 h-5" />
+                        Key Performance Indicators
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-6">
+                        <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-lg">
+                          <div className="text-3xl font-bold text-blue-600">98.7%</div>
+                          <div className="text-sm text-muted-foreground">Overall Availability</div>
+                          <div className="text-xs text-blue-600 mt-1">+2.3% vs target</div>
+                        </div>
+
+                        <div className="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-lg">
+                          <div className="text-3xl font-bold text-green-600">99.97%</div>
+                          <div className="text-sm text-muted-foreground">Transaction Success</div>
+                          <div className="text-xs text-green-600 mt-1">Above SLA</div>
+                        </div>
+
+                        <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-lg">
+                          <div className="text-3xl font-bold text-purple-600">142ms</div>
+                          <div className="text-sm text-muted-foreground">Avg Response Time</div>
+                          <div className="text-xs text-purple-600 mt-1">-18ms improved</div>
+                        </div>
+
+                        <div className="text-center p-4 bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20 rounded-lg">
+                          <div className="text-3xl font-bold text-amber-600">₹2.4Cr</div>
+                          <div className="text-sm text-muted-foreground">Daily Revenue</div>
+                          <div className="text-xs text-amber-600 mt-1">+12% this month</div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Advanced Analytics Charts */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Activity className="w-5 h-5" />
+                        Regional Performance Heatmap
+                      </CardTitle>
+                      <CardDescription>Device health scores by region and time</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <AreaChart data={performanceData}>
+                          <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                          <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                          <YAxis tick={{ fontSize: 12 }} />
+                          <Tooltip 
+                            contentStyle={{
+                              backgroundColor: '#fff',
+                              border: '1px solid #e5e7eb',
+                              borderRadius: '8px'
+                            }}
+                          />
+                          <Area 
+                            type="monotone" 
+                            dataKey="uptime" 
+                            stackId="1" 
+                            stroke="#3b82f6" 
+                            fill="#3b82f6" 
+                            fillOpacity={0.3}
+                            name="Uptime %"
+                          />
+                          <Area 
+                            type="monotone" 
+                            dataKey="efficiency" 
+                            stackId="1" 
+                            stroke="#10b981" 
+                            fill="#10b981" 
+                            fillOpacity={0.3}
+                            name="Efficiency %"
+                          />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Globe className="w-5 h-5" />
+                        Device Distribution Analysis
+                      </CardTitle>
+                      <CardDescription>Device status distribution across vendors</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <PieChart>
+                          <Pie
+                            data={[
+                              { name: 'BCIL', value: 35, color: '#3b82f6' },
+                              { name: 'ZEBRA', value: 28, color: '#10b981' },
+                              { name: 'IMP', value: 22, color: '#f59e0b' },
+                              { name: 'ANJ', value: 15, color: '#ef4444' }
+                            ]}
+                            cx="50%"
+                            cy="50%"
+                            outerRadius={100}
+                            innerRadius={40}
+                            fill="#8884d8"
+                            dataKey="value"
+                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                            labelLine={false}
+                          >
+                            {[
+                              { name: 'BCIL', value: 35, color: '#3b82f6' },
+                              { name: 'ZEBRA', value: 28, color: '#10b981' },
+                              { name: 'IMP', value: 22, color: '#f59e0b' },
+                              { name: 'ANJ', value: 15, color: '#ef4444' }
+                            ].map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip 
+                            formatter={(value: any, name: any) => [`${value}%`, `${name} Devices`]}
+                            contentStyle={{
+                              backgroundColor: '#fff',
+                              border: '1px solid #e5e7eb',
+                              borderRadius: '8px'
+                            }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+                </div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <Card>
                     <CardHeader>
