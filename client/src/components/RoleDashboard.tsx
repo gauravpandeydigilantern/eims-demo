@@ -2654,7 +2654,7 @@ const serviceMetrics = [
 function NECAdminDashboard() {
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('devices');
+  const [activeTab, setActiveTab] = useState('overview');
   const isMobile = useIsMobile();
 
   const { data: adminStats } = useQuery({
@@ -2714,13 +2714,92 @@ function NECAdminDashboard() {
 
           <div className="p-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-              <TabsList className="grid grid-cols-5 lg:w-fit">
+              <TabsList className="grid grid-cols-8 lg:w-fit">
+                <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
                 <TabsTrigger value="devices" data-testid="tab-devices">Device Management</TabsTrigger>
                 <TabsTrigger value="users" data-testid="tab-users">User Management</TabsTrigger>
                 <TabsTrigger value="configuration" data-testid="tab-configuration">Configuration</TabsTrigger>
                 <TabsTrigger value="analytics" data-testid="tab-analytics">Analytics</TabsTrigger>
+                <TabsTrigger value="alerts" data-testid="tab-alerts">Alerts</TabsTrigger>
+                <TabsTrigger value="reports" data-testid="tab-reports">Reports</TabsTrigger>
                 <TabsTrigger value="logs" data-testid="tab-logs">System Logs</TabsTrigger>
               </TabsList>
+
+              <TabsContent value="overview" className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Total Devices</CardTitle>
+                      <Monitor className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">5,120</div>
+                      <p className="text-xs text-muted-foreground">Across all regions</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Active Users</CardTitle>
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">847</div>
+                      <p className="text-xs text-muted-foreground">System users</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">System Health</CardTitle>
+                      <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-green-600">98.5%</div>
+                      <p className="text-xs text-muted-foreground">Overall health</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Active Alerts</CardTitle>
+                      <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-orange-600">23</div>
+                      <p className="text-xs text-muted-foreground">Require attention</p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Quick Actions */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Quick Actions</CardTitle>
+                    <CardDescription>Common administrative tasks</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <Button variant="outline" className="h-20 flex-col">
+                        <UserPlus className="h-6 w-6 mb-2" />
+                        Add User
+                      </Button>
+                      <Button variant="outline" className="h-20 flex-col">
+                        <Settings className="h-6 w-6 mb-2" />
+                        System Config
+                      </Button>
+                      <Button variant="outline" className="h-20 flex-col">
+                        <Download className="h-6 w-6 mb-2" />
+                        Export Data
+                      </Button>
+                      <Button variant="outline" className="h-20 flex-col">
+                        <RefreshCw className="h-6 w-6 mb-2" />
+                        Sync Devices
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
               <TabsContent value="devices" className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -2932,6 +3011,160 @@ function NECAdminDashboard() {
                           <span className="text-sm">Network timeout for FR_KOL_002</span>
                         </div>
                         <span className="text-xs text-muted-foreground">1 hour ago</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="alerts" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Active Alerts Management</CardTitle>
+                    <CardDescription>Monitor and manage system alerts</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-4 border rounded-lg border-red-200 bg-red-50">
+                        <div className="flex items-center gap-3">
+                          <AlertTriangle className="h-5 w-5 text-red-600" />
+                          <div>
+                            <div className="font-medium text-red-900">Critical Device Offline</div>
+                            <div className="text-sm text-red-700">FR_MUM_045 - Mumbai Toll Plaza 3</div>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline">Acknowledge</Button>
+                          <Button size="sm">Investigate</Button>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center justify-between p-4 border rounded-lg border-orange-200 bg-orange-50">
+                        <div className="flex items-center gap-3">
+                          <AlertTriangle className="h-5 w-5 text-orange-600" />
+                          <div>
+                            <div className="font-medium text-orange-900">High Temperature Warning</div>
+                            <div className="text-sm text-orange-700">HHD_DEL_012 - Temperature: 78°C</div>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline">Acknowledge</Button>
+                          <Button size="sm">View Details</Button>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center justify-between p-4 border rounded-lg border-yellow-200 bg-yellow-50">
+                        <div className="flex items-center gap-3">
+                          <Bell className="h-5 w-5 text-yellow-600" />
+                          <div>
+                            <div className="font-medium text-yellow-900">Maintenance Due</div>
+                            <div className="text-sm text-yellow-700">5 devices require scheduled maintenance</div>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline">Schedule</Button>
+                          <Button size="sm">View List</Button>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="reports" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>System Reports</CardTitle>
+                    <CardDescription>Generate and download system reports</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <div className="border rounded-lg p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <FileText className="h-5 w-5 text-blue-600" />
+                              <span className="font-medium">Device Status Report</span>
+                            </div>
+                            <Button size="sm" variant="outline">
+                              <Download className="h-4 w-4 mr-1" />
+                              Export
+                            </Button>
+                          </div>
+                          <p className="text-sm text-muted-foreground">Complete device status and health metrics</p>
+                        </div>
+                        
+                        <div className="border rounded-lg p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <Users className="h-5 w-5 text-green-600" />
+                              <span className="font-medium">User Activity Report</span>
+                            </div>
+                            <Button size="sm" variant="outline">
+                              <Download className="h-4 w-4 mr-1" />
+                              Export
+                            </Button>
+                          </div>
+                          <p className="text-sm text-muted-foreground">User login and activity statistics</p>
+                        </div>
+                        
+                        <div className="border rounded-lg p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <AlertTriangle className="h-5 w-5 text-red-600" />
+                              <span className="font-medium">Alerts Summary</span>
+                            </div>
+                            <Button size="sm" variant="outline">
+                              <Download className="h-4 w-4 mr-1" />
+                              Export
+                            </Button>
+                          </div>
+                          <p className="text-sm text-muted-foreground">Alert trends and resolution statistics</p>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        <div className="border rounded-lg p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <BarChart3 className="h-5 w-5 text-purple-600" />
+                              <span className="font-medium">Performance Analytics</span>
+                            </div>
+                            <Button size="sm" variant="outline">
+                              <Download className="h-4 w-4 mr-1" />
+                              Export
+                            </Button>
+                          </div>
+                          <p className="text-sm text-muted-foreground">System performance trends and metrics</p>
+                        </div>
+                        
+                        <div className="border rounded-lg p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <Database className="h-5 w-5 text-indigo-600" />
+                              <span className="font-medium">System Health Report</span>
+                            </div>
+                            <Button size="sm" variant="outline">
+                              <Download className="h-4 w-4 mr-1" />
+                              Export
+                            </Button>
+                          </div>
+                          <p className="text-sm text-muted-foreground">Overall system health and uptime metrics</p>
+                        </div>
+                        
+                        <div className="border rounded-lg p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <Calendar className="h-5 w-5 text-orange-600" />
+                              <span className="font-medium">Custom Report</span>
+                            </div>
+                            <Button size="sm">
+                              <Edit className="h-4 w-4 mr-1" />
+                              Create
+                            </Button>
+                          </div>
+                          <p className="text-sm text-muted-foreground">Generate custom reports with specific criteria</p>
+                        </div>
                       </div>
                     </div>
                   </CardContent>

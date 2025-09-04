@@ -51,15 +51,15 @@ export default function Sidebar({ isOpen, onClose, isMobile, activeTab, onTabCha
       };
     } else if (user?.role === 'NEC_ADMIN') {
       return {
-        'overview': 'devices',      // Dashboard → Device Management (main overview)
-        'data': 'analytics',        // Data View → Analytics (data analysis)
-        'alerts': 'logs',           // Alerts → System Logs (alert history)
-        'analytics': 'analytics',   // Analytics → Analytics
-        'reports': 'logs',          // Reports → System Logs (log reports)
+        'overview': 'overview',        // Dashboard → Overview (main dashboard)
+        'data': 'devices',             // Data View → Device Management 
+        'alerts': 'alerts',            // Alerts → Alerts (dedicated alerts tab)
+        'analytics': 'analytics',      // Analytics → Analytics
+        'reports': 'reports',          // Reports → Reports (dedicated reports tab)
         'ai-assistant': 'configuration',  // AI Assistant → Configuration 
-        'user-management': 'users', // User Management → Users
-        'activity': 'logs',         // Activity → System Logs
-        'settings': 'configuration' // Settings → Configuration
+        'user-management': 'users',    // User Management → Users
+        'activity': 'logs',            // Activity → System Logs
+        'settings': 'configuration'    // Settings → Configuration
       };
     } else { // CLIENT
       return {
