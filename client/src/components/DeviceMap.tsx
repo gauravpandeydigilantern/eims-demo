@@ -24,10 +24,14 @@ export default function DeviceMap({ onDeviceSelect }: DeviceMapProps) {
   const [showClusters, setShowClusters] = useState(true);
   const [, setLocation] = useLocation();
 
-  const { data: devices, isLoading } = useQuery({
+  const { data: devicesResponse, isLoading } = useQuery<{success?: boolean, data?: any[]} | any>({
     queryKey: ["/api/devices"],
     refetchInterval: 30 * 1000,
   });
+
+  // Extract devices array from response
+  const devicesAny: any = devicesResponse as any;
+  const devices = Array.isArray(devicesAny) ? devicesAny : (devicesAny?.data ?? []);
 
   // Listen for real-time device updates
   useWebSocket((message) => {
@@ -37,16 +41,20 @@ export default function DeviceMap({ onDeviceSelect }: DeviceMapProps) {
   });
 
   useEffect(() => {
-    if (!mapRef.current) return;
+    // Initialize only once when container is present
+    if (!mapRef.current || mapInstanceRef.current) return;
 
     // Load Leaflet dynamically
     const loadLeaflet = async () => {
       if (typeof window !== 'undefined' && !window.L) {
-        // Load Leaflet CSS
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-        document.head.appendChild(link);
+        // Load Leaflet CSS if not already added
+        const existingLink = Array.from(document.getElementsByTagName('link')).some(l => l.href.includes('leaflet.css'));
+        if (!existingLink) {
+          const link = document.createElement('link');
+          link.rel = 'stylesheet';
+          link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+          document.head.appendChild(link);
+        }
 
         // Load Leaflet JS
         const script = document.createElement('script');
@@ -96,6 +104,13 @@ export default function DeviceMap({ onDeviceSelect }: DeviceMapProps) {
 
     mapInstanceRef.current = map;
     setMapLoaded(true);
+
+    // Ensure the map renders correctly if container size changed
+    setTimeout(() => {
+      try {
+        map.invalidateSize();
+      } catch {}
+    }, 0);
   };
 
   const updateMapMarkers = () => {
@@ -112,13 +127,24 @@ export default function DeviceMap({ onDeviceSelect }: DeviceMapProps) {
     } else {
       addIndividualMarkers();
     }
+
+    // After updating markers, make sure map recalculates size
+    try {
+      mapInstanceRef.current.invalidateSize();
+    } catch {}
   };
 
   const addIndividualMarkers = () => {
     if (!devices || !Array.isArray(devices)) return;
 
-    devices.forEach((device: any) => {
-      if (!device.latitude || !device.longitude) return;
+    const mappable = devices.filter((d: any) =>
+      d && d.latitude != null && d.longitude != null && `${d.latitude}` !== '' && `${d.longitude}` !== ''
+    );
+
+    mappable.forEach((device: any) => {
+      const lat = parseFloat(`${device.latitude}`);
+      const lng = parseFloat(`${device.longitude}`);
+      if (Number.isNaN(lat) || Number.isNaN(lng)) return;
 
       const color = getStatusColor(device.status);
       const icon = window.L.divIcon({
@@ -128,7 +154,7 @@ export default function DeviceMap({ onDeviceSelect }: DeviceMapProps) {
         iconAnchor: [6, 6]
       });
 
-      const marker = window.L.marker([parseFloat(device.latitude), parseFloat(device.longitude)], { icon })
+      const marker = window.L.marker([lat, lng], { icon })
         .bindPopup(`
           <div class="p-2">
             <div class="font-medium">${device.id}</div>
@@ -147,7 +173,11 @@ export default function DeviceMap({ onDeviceSelect }: DeviceMapProps) {
     // Simple clustering by region for performance
     if (!devices || !Array.isArray(devices)) return;
 
-    const regionGroups = devices.reduce((groups: any, device: any) => {
+    const mappable = devices.filter((d: any) =>
+      d && d.latitude != null && d.longitude != null && `${d.latitude}` !== '' && `${d.longitude}` !== ''
+    );
+
+    const regionGroups = mappable.reduce((groups: any, device: any) => {
       const region = device.region;
       if (!groups[region]) groups[region] = [];
       groups[region].push(device);
@@ -159,8 +189,8 @@ export default function DeviceMap({ onDeviceSelect }: DeviceMapProps) {
       if (deviceArray.length === 0) return;
 
       // Calculate center point
-      const avgLat = deviceArray.reduce((sum, d) => sum + parseFloat(d.latitude || '0'), 0) / deviceArray.length;
-      const avgLng = deviceArray.reduce((sum, d) => sum + parseFloat(d.longitude || '0'), 0) / deviceArray.length;
+  const avgLat = deviceArray.reduce((sum, d) => sum + parseFloat(`${d.latitude}`), 0) / deviceArray.length;
+  const avgLng = deviceArray.reduce((sum, d) => sum + parseFloat(`${d.longitude}`), 0) / deviceArray.length;
 
       // Count devices by status
       const statusCounts = deviceArray.reduce((counts, device) => {
@@ -244,6 +274,10 @@ export default function DeviceMap({ onDeviceSelect }: DeviceMapProps) {
     return counts;
   }, {}) : {};
 
+  const mappableCount = Array.isArray(devices)
+    ? devices.filter((d: any) => d && d.latitude && d.longitude).length
+    : 0;
+
   return (
     <Card>
       <div className="p-6 border-b border-border">
@@ -283,20 +317,28 @@ export default function DeviceMap({ onDeviceSelect }: DeviceMapProps) {
       </div>
       
       <CardContent className="p-0">
-        <div className="h-96 w-full">
-          {isLoading ? (
-            <div className="h-full flex items-center justify-center bg-muted/20">
+        <div className="h-96 w-full relative">
+          <div 
+            ref={mapRef} 
+            className="h-full w-full rounded-b-lg"
+            data-testid="map-container"
+          />
+
+          {isLoading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-muted/20">
               <div className="text-center space-y-2">
                 <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
                 <p className="text-muted-foreground text-sm">Loading map...</p>
               </div>
             </div>
-          ) : (
-            <div 
-              ref={mapRef} 
-              className="h-full w-full rounded-b-lg"
-              data-testid="map-container"
-            />
+          )}
+
+          {!isLoading && mapLoaded && Array.isArray(devices) && devices.length > 0 && mappableCount === 0 && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="px-3 py-1 rounded bg-background/80 text-xs text-muted-foreground border">
+                No device coordinates to plot
+              </div>
+            </div>
           )}
         </div>
       </CardContent>
