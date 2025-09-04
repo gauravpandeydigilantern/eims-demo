@@ -40,37 +40,37 @@ export default function Sidebar({ isOpen, onClose, isMobile, activeTab, onTabCha
       };
     } else if (user?.role === 'NEC_ENGINEER') {
       return {
-        'overview': 'overview',
-        'data': 'data',
-        'alerts': 'alerts', 
+        'overview': 'monitoring',
+        'data': 'devices',
+        'alerts': 'monitoring', 
         'analytics': 'analytics',
         'reports': 'reports',
-        'ai-assistant': 'operations',
-        'user-management': 'operations',
-        'settings': 'operations'
+        'ai-assistant': 'maintenance',
+        'user-management': 'monitoring',
+        'settings': 'maintenance'
       };
     } else if (user?.role === 'NEC_ADMIN') {
       return {
-        'overview': 'overview',
-        'data': 'data',
-        'alerts': 'alerts',
-        'analytics': 'analytics',
-        'reports': 'reports',
-        'ai-assistant': 'operations',
-        'user-management': 'operations',
-        'activity': 'activity',
-        'settings': 'operations'
+        'overview': 'devices',      // Dashboard → Device Management (main overview)
+        'data': 'analytics',        // Data View → Analytics (data analysis)
+        'alerts': 'logs',           // Alerts → System Logs (alert history)
+        'analytics': 'analytics',   // Analytics → Analytics
+        'reports': 'logs',          // Reports → System Logs (log reports)
+        'ai-assistant': 'configuration',  // AI Assistant → Configuration 
+        'user-management': 'users', // User Management → Users
+        'activity': 'logs',         // Activity → System Logs
+        'settings': 'configuration' // Settings → Configuration
       };
     } else { // CLIENT
       return {
         'overview': 'overview',
-        'data': 'data',
-        'alerts': 'alerts',
+        'data': 'overview',
+        'alerts': 'overview',
         'analytics': 'analytics',
         'reports': 'reports',
-        'ai-assistant': 'operations',
+        'ai-assistant': 'service',
         'user-management': 'overview',
-        'settings': 'overview'
+        'settings': 'service'
       };
     }
   };
