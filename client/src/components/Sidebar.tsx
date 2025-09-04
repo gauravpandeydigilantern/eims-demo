@@ -58,6 +58,8 @@ export default function Sidebar({ isOpen, onClose, isMobile, activeTab, onTabCha
         'reports': 'reports',          // Reports → Reports (dedicated reports tab)
         'ai-assistant': 'configuration',  // AI Assistant → Configuration 
         'user-management': 'users',    // User Management → Users
+        'notifications': 'notifications', // Notifications → Notifications
+        'vendor-integration': 'vendor-integration', // Vendor Integration → Vendor Integration
         'activity': 'logs',            // Activity → System Logs
         'settings': 'configuration'    // Settings → Configuration
       };
@@ -77,7 +79,17 @@ export default function Sidebar({ isOpen, onClose, isMobile, activeTab, onTabCha
 
   const handleLinkClick = (sidebarTab?: string) => {
     return () => {
-      if (sidebarTab && onTabChange) {
+      // Route certain items to standalone pages
+      if (sidebarTab === 'ai-assistant') {
+        window.history.pushState({}, '', '/ai-assistant');
+        window.dispatchEvent(new PopStateEvent('popstate'));
+      } else if (sidebarTab === 'user-management') {
+        window.history.pushState({}, '', '/users');
+        window.dispatchEvent(new PopStateEvent('popstate'));
+      } else if (sidebarTab === 'settings') {
+        window.history.pushState({}, '', '/settings');
+        window.dispatchEvent(new PopStateEvent('popstate'));
+      } else if (sidebarTab && onTabChange) {
         const sidebarToTabMap = getSidebarToTabMap();
         const tabValue = sidebarToTabMap[sidebarTab] || sidebarTab;
         onTabChange(tabValue);
@@ -235,6 +247,42 @@ export default function Sidebar({ isOpen, onClose, isMobile, activeTab, onTabCha
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
                 </svg>
                 <span>User Management</span>
+              </button>
+            )}
+            
+            {/* Notifications - Only for NEC_ADMIN */}
+            {user?.role === 'NEC_ADMIN' && (
+              <button 
+                className={`flex items-center space-x-3 rounded-lg px-3 py-2 w-full text-left transition-colors ${
+                  isSidebarItemActive('notifications') 
+                    ? 'text-foreground bg-primary/10' 
+                    : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                }`}
+                onClick={handleLinkClick('notifications')}
+                data-testid="link-notifications"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                <span>Notifications</span>
+              </button>
+            )}
+            
+            {/* Vendor Integration - Only for NEC_ADMIN */}
+            {user?.role === 'NEC_ADMIN' && (
+              <button 
+                className={`flex items-center space-x-3 rounded-lg px-3 py-2 w-full text-left transition-colors ${
+                  isSidebarItemActive('vendor-integration') 
+                    ? 'text-foreground bg-primary/10' 
+                    : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                }`}
+                onClick={handleLinkClick('vendor-integration')}
+                data-testid="link-vendor-integration"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h6l2 2h6a2 2 0 012 2v6a2 2 0 01-2 2H5z" />
+                </svg>
+                <span>Vendor Integration</span>
               </button>
             )}
             

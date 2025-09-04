@@ -29,7 +29,6 @@ interface RoleStats {
     systemHealth: number;
     criticalAlerts: number;
     monthlyUptime: number;
-    costSavings: number;
     maintenanceReduction: number;
     responseTimeImprovement: number;
   };
@@ -162,19 +161,7 @@ export default function RoleSpecificStats() {
         </div>
 
         {/* Business Impact Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm">Cost Optimization</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-xl font-bold text-green-600">
-                ₹{roleStats.general.costSavings.toLocaleString()}K
-              </div>
-              <p className="text-xs text-muted-foreground">Monthly savings achieved</p>
-            </CardContent>
-          </Card>
-
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Card>
             <CardHeader>
               <CardTitle className="text-sm">Maintenance Reduction</CardTitle>

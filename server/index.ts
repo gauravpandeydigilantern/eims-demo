@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import express, { type Request, Response, NextFunction } from "express";
+import cors from "cors";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { seedDemoUsers } from "./seedUsers";
@@ -9,6 +10,19 @@ import { seedDatabase } from "./data/seedData";
 import { deviceMonitoringService } from "./services/deviceMonitoringService";
 
 const app = express();
+
+// Trust proxy for session handling
+app.set("trust proxy", 1);
+
+// CORS configuration for development
+app.use(cors({
+  origin: true, // Allow all origins in development
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+  allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
+  exposedHeaders: ["Set-Cookie"],
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 

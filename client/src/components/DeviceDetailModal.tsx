@@ -28,9 +28,10 @@ export default function DeviceDetailModal({ deviceId, onClose }: DeviceDetailMod
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: deviceData, isLoading } = useQuery<{device: any; metrics: any; recentAlerts: any[]}>({
-    queryKey: ["/api/devices", deviceId],
+  const { data: deviceData, isLoading, error } = useQuery<{device: any; metrics: any; recentAlerts: any[]}>({
+    queryKey: [`/api/devices/${deviceId}`],
     enabled: !!deviceId,
+    retry: 2,
   });
 
   const operationMutation = useMutation({

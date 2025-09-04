@@ -4,10 +4,14 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import Landing from "@/pages/Landing";
 import Home from "@/pages/Home";
 import DeviceDetail from "@/pages/DeviceDetail";
 import DeviceList from "@/pages/DeviceList";
+import AIAssistantPage from "./pages/AIAssistantPage";
+import UserManagementPage from "./pages/UserManagementPage";
+import SettingsPage from "./pages/SettingsPage";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -19,9 +23,36 @@ function Router() {
         <Route path="/" component={Landing} />
       ) : (
         <>
-          <Route path="/" component={Home} />
-          <Route path="/device/:deviceId" component={DeviceDetail} />
-          <Route path="/devices/:filter?" component={DeviceList} />
+          <Route path="/" component={() => (
+            <ErrorBoundary>
+              <Home />
+            </ErrorBoundary>
+          )} />
+          <Route path="/ai-assistant" component={() => (
+            <ErrorBoundary>
+              <AIAssistantPage />
+            </ErrorBoundary>
+          )} />
+          <Route path="/users" component={() => (
+            <ErrorBoundary>
+              <UserManagementPage />
+            </ErrorBoundary>
+          )} />
+          <Route path="/settings" component={() => (
+            <ErrorBoundary>
+              <SettingsPage />
+            </ErrorBoundary>
+          )} />
+          <Route path="/device/:deviceId" component={() => (
+            <ErrorBoundary>
+              <DeviceDetail />
+            </ErrorBoundary>
+          )} />
+          <Route path="/devices/:filter?" component={() => (
+            <ErrorBoundary>
+              <DeviceList />
+            </ErrorBoundary>
+          )} />
         </>
       )}
       <Route component={NotFound} />
@@ -31,12 +62,14 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Router />
-      </TooltipProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Router />
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 

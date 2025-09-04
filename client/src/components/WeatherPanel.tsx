@@ -2,6 +2,20 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
+import { Suspense, lazy } from "react";
+
+// Lazy load the Button component as a fallback
+const LazyButton = lazy(() => import("@/components/ui/button").then(module => ({ default: module.Button })));
+
+// Safe Button component that falls back if import fails
+const SafeButton = ({ children, ...props }: any) => {
+  try {
+    return Button ? <Button {...props}>{children}</Button> : <LazyButton {...props}>{children}</LazyButton>;
+  } catch (error) {
+    console.warn('Button component failed to load:', error);
+    return <button {...props} className={`inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium ${props.className || ''}`}>{children}</button>;
+  }
+};
 
 export default function WeatherPanel() {
   const { data: weatherData, isLoading } = useQuery({
@@ -288,12 +302,14 @@ export default function WeatherPanel() {
           )}
 
           {/* Weather Dashboard Link */}
-          <Button variant="outline" className="w-full" data-testid="button-expand-weather">
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-            </svg>
-            View Full Weather Dashboard
-          </Button>
+          <Suspense fallback={<div className="w-full p-2 border rounded">Loading...</div>}>
+            <SafeButton variant="outline" className="w-full" data-testid="button-expand-weather">
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+              </svg>
+              View Full Weather Dashboard
+            </SafeButton>
+          </Suspense>
         </CardContent>
       </Card>
     </div>

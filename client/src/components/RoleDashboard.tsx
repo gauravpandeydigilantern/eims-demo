@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
 import NavigationHeader from "./NavigationHeader";
@@ -18,6 +18,21 @@ import EnhancedDeviceDataView from "./EnhancedDeviceDataView";
 import RoleSpecificStats from "./RoleSpecificStats";
 import AdminActivityTracker from "./AdminActivityTracker";
 import ProjectLevelAnalytics from "./ProjectLevelAnalytics";
+import UserManagement from "./UserManagement";
+import NotificationManagement from "./NotificationManagement";
+import VendorIntegrationManagement from "./VendorIntegrationManagement";
+
+// Loading component
+const LoadingFallback = () => (
+  <div className="min-h-screen bg-background">
+    <div className="flex items-center justify-center h-screen">
+      <div className="text-center space-y-4">
+        <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+        <p className="text-muted-foreground">Loading dashboard...</p>
+      </div>
+    </div>
+  </div>
+);
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,7 +43,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Shield, MapPin, Users, Settings, Eye, Monitor, AlertTriangle, BarChart3, Activity, TrendingUp, Database, Zap, Cpu, Thermometer, Wifi, Battery, Globe, Download, FileText, Table, Calendar, Filter, Search, Edit, Trash2, MessageSquare, BookOpen, Palette, UserPlus, CheckCircle, Target, Layers, Command, Smartphone, Cloud, RotateCcw, Languages, Accessibility, Bell, RefreshCw, Clock, TrendingDown } from "lucide-react";
+import { Shield, MapPin, Users, Settings, Eye, Monitor, AlertTriangle, BarChart3, Activity, TrendingUp, Database, Zap, Cpu, Thermometer, Wifi, Battery, Globe, Download, FileText, Table, Calendar, Filter, Search, Edit, Trash2, MessageSquare, BookOpen, Palette, UserPlus, CheckCircle, Target, Layers, Command, Smartphone, Cloud, RotateCcw, Languages, Accessibility, Bell, RefreshCw, Clock, TrendingDown, ExternalLink } from "lucide-react";
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area, ComposedChart } from "recharts";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import * as XLSX from 'xlsx';
@@ -51,6 +66,7 @@ interface DashboardLayoutProps {
 function DashboardLayout({ title, subtitle, badge, showLogout = false }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('overview');
   const isMobile = useIsMobile();
 
   const logoutMutation = useMutation({
@@ -74,6 +90,8 @@ function DashboardLayout({ title, subtitle, badge, showLogout = false }: Dashboa
           isOpen={sidebarOpen} 
           onClose={() => setSidebarOpen(false)}
           isMobile={isMobile}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
           data-testid="sidebar"
         />
         
@@ -234,22 +252,26 @@ function NECGeneralDashboard() {
             </div>
           </div>
 
-          {/* Multi-tab Dashboard Content */}
+          {/* Dashboard Content - Navigation controlled by Sidebar */}
           <div className="p-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-              <TabsList className={`grid ${user?.role === 'NEC_GENERAL' || user?.role === 'NEC_ADMIN' ? 'grid-cols-9' : 'grid-cols-8'} lg:w-fit`}>
-                <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
-                <TabsTrigger value="project-analytics" data-testid="tab-project-analytics">Project Analytics</TabsTrigger>
-                <TabsTrigger value="data" data-testid="tab-data">Data View</TabsTrigger>
-                <TabsTrigger value="performance" data-testid="tab-performance">Performance</TabsTrigger>
-                <TabsTrigger value="analytics" data-testid="tab-analytics">Analytics</TabsTrigger>
-                <TabsTrigger value="alerts" data-testid="tab-alerts">Alerts</TabsTrigger>
-                <TabsTrigger value="operations" data-testid="tab-operations">Operations</TabsTrigger>
-                <TabsTrigger value="reports" data-testid="tab-reports">Reports</TabsTrigger>
-                {(user?.role === 'NEC_GENERAL' || user?.role === 'NEC_ADMIN') && (
-                  <TabsTrigger value="activity" data-testid="tab-activity">Activity</TabsTrigger>
-                )}
-              </TabsList>
+              {/* TabsList removed - Navigation handled by Sidebar only
+              <div className="overflow-x-auto">
+                <TabsList className={`grid ${user?.role === 'NEC_GENERAL' || user?.role === 'NEC_ADMIN' ? 'grid-cols-9' : 'grid-cols-8'} w-max min-w-full lg:w-fit`}>
+                  <TabsTrigger value="overview" data-testid="tab-overview" className="whitespace-nowrap">Overview</TabsTrigger>
+                  <TabsTrigger value="project-analytics" data-testid="tab-project-analytics" className="whitespace-nowrap">Project Analytics</TabsTrigger>
+                  <TabsTrigger value="data" data-testid="tab-data" className="whitespace-nowrap">Data View</TabsTrigger>
+                  <TabsTrigger value="performance" data-testid="tab-performance" className="whitespace-nowrap">Performance</TabsTrigger>
+                  <TabsTrigger value="analytics" data-testid="tab-analytics" className="whitespace-nowrap">Analytics</TabsTrigger>
+                  <TabsTrigger value="alerts" data-testid="tab-alerts" className="whitespace-nowrap">Alerts</TabsTrigger>
+                  <TabsTrigger value="operations" data-testid="tab-operations" className="whitespace-nowrap">Operations</TabsTrigger>
+                  <TabsTrigger value="reports" data-testid="tab-reports" className="whitespace-nowrap">Reports</TabsTrigger>
+                  {(user?.role === 'NEC_GENERAL' || user?.role === 'NEC_ADMIN') && (
+                    <TabsTrigger value="activity" data-testid="tab-activity" className="whitespace-nowrap">Activity</TabsTrigger>
+                  )}
+                </TabsList>
+              </div>
+              */}
 
               {/* Overview Tab - Role-Specific Professional Dashboard */}
               <TabsContent value="overview" className="space-y-6">
@@ -331,7 +353,7 @@ function NECGeneralDashboard() {
                         <CardDescription>Comprehensive performance metrics with drill-down capabilities</CardDescription>
                       </CardHeader>
                       <CardContent>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           <div className="space-y-4">
                             <div className="flex items-center justify-between">
                               <span className="text-sm font-medium">Regional Performance</span>
@@ -339,42 +361,32 @@ function NECGeneralDashboard() {
                                 <Eye className="w-4 h-4" />
                               </Button>
                             </div>
-                            <ResponsiveContainer width="100%" height={120}>
-                              <BarChart data={[
-                                { region: 'MUM', performance: 97 },
-                                { region: 'DEL', performance: 94 },
-                                { region: 'BNG', performance: 98 },
-                                { region: 'CHN', performance: 96 }
-                              ]}>
-                                <Bar dataKey="performance" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                                <XAxis dataKey="region" tick={{ fontSize: 10 }} />
-                                <YAxis domain={[90, 100]} tick={{ fontSize: 10 }} />
-                                <Tooltip />
-                              </BarChart>
-                            </ResponsiveContainer>
-                          </div>
-
-                          <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm font-medium">Revenue Trends</span>
-                              <Button size="sm" variant="ghost">
-                                <TrendingUp className="w-4 h-4" />
-                              </Button>
+                            <div className="h-40 w-full border rounded-lg p-2 bg-muted/20">
+                              <ResponsiveContainer width="100%" height="100%">
+                                <BarChart 
+                                  data={[
+                                    { region: 'MUM', performance: 97 },
+                                    { region: 'DEL', performance: 94 },
+                                    { region: 'BNG', performance: 98 },
+                                    { region: 'CHN', performance: 96 }
+                                  ]}
+                                  margin={{ top: 10, right: 10, left: 10, bottom: 10 }}
+                                >
+                                  <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                                  <XAxis dataKey="region" tick={{ fontSize: 12 }} />
+                                  <YAxis domain={[90, 100]} tick={{ fontSize: 12 }} />
+                                  <Tooltip 
+                                    contentStyle={{ 
+                                      backgroundColor: 'hsl(var(--background))', 
+                                      border: '1px solid hsl(var(--border))', 
+                                      borderRadius: '6px',
+                                      fontSize: '12px'
+                                    }} 
+                                  />
+                                  <Bar dataKey="performance" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                                </BarChart>
+                              </ResponsiveContainer>
                             </div>
-                            <ResponsiveContainer width="100%" height={120}>
-                              <LineChart data={[
-                                { month: 'Jan', revenue: 2.1 },
-                                { month: 'Feb', revenue: 2.3 },
-                                { month: 'Mar', revenue: 2.5 },
-                                { month: 'Apr', revenue: 2.4 },
-                                { month: 'May', revenue: 2.6 }
-                              ]}>
-                                <Line type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2} />
-                                <XAxis dataKey="month" tick={{ fontSize: 10 }} />
-                                <YAxis tick={{ fontSize: 10 }} />
-                                <Tooltip formatter={(value) => [`₹${value}Cr`, 'Revenue']} />
-                              </LineChart>
-                            </ResponsiveContainer>
                           </div>
 
                           <div className="space-y-4">
@@ -384,33 +396,58 @@ function NECGeneralDashboard() {
                                 <Activity className="w-4 h-4" />
                               </Button>
                             </div>
-                            <ResponsiveContainer width="100%" height={120}>
-                              <PieChart>
-                                <Pie
-                                  data={[
-                                    { name: 'Excellent', value: 65, color: '#10b981' },
-                                    { name: 'Good', value: 25, color: '#3b82f6' },
-                                    { name: 'Warning', value: 8, color: '#f59e0b' },
-                                    { name: 'Critical', value: 2, color: '#ef4444' }
-                                  ]}
-                                  cx="50%"
-                                  cy="50%"
-                                  outerRadius={40}
-                                  innerRadius={20}
-                                  dataKey="value"
-                                >
-                                  {[
-                                    { name: 'Excellent', value: 65, color: '#10b981' },
-                                    { name: 'Good', value: 25, color: '#3b82f6' },
-                                    { name: 'Warning', value: 8, color: '#f59e0b' },
-                                    { name: 'Critical', value: 2, color: '#ef4444' }
-                                  ].map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={entry.color} />
-                                  ))}
-                                </Pie>
-                                <Tooltip />
-                              </PieChart>
-                            </ResponsiveContainer>
+                            <div className="h-40 w-full border rounded-lg p-2 bg-muted/20 flex items-center justify-center">
+                              <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                  <Pie
+                                    data={[
+                                      { name: 'Excellent', value: 65 },
+                                      { name: 'Good', value: 25 },
+                                      { name: 'Warning', value: 8 },
+                                      { name: 'Critical', value: 2 }
+                                    ]}
+                                    cx="50%"
+                                    cy="50%"
+                                    outerRadius={60}
+                                    innerRadius={30}
+                                    dataKey="value"
+                                    label={({ name, percent }) => `${(percent * 100).toFixed(0)}%`}
+                                  >
+                                    <Cell fill="#10b981" />
+                                    <Cell fill="#3b82f6" />
+                                    <Cell fill="#f59e0b" />
+                                    <Cell fill="#ef4444" />
+                                  </Pie>
+                                  <Tooltip 
+                                    formatter={(value, name) => [`${value}%`, name]}
+                                    contentStyle={{ 
+                                      backgroundColor: 'hsl(var(--background))', 
+                                      border: '1px solid hsl(var(--border))', 
+                                      borderRadius: '6px',
+                                      fontSize: '12px'
+                                    }}
+                                  />
+                                </PieChart>
+                              </ResponsiveContainer>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2 text-xs">
+                              <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                                <span>Excellent (65%)</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                                <span>Good (25%)</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                                <span>Warning (8%)</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                                <span>Critical (2%)</span>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </CardContent>
@@ -1281,10 +1318,10 @@ function NECGeneralDashboard() {
                           <div className="text-xs text-purple-600 mt-1">-18ms improved</div>
                         </div>
 
-                        <div className="text-center p-4 bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20 rounded-lg">
-                          <div className="text-3xl font-bold text-amber-600">₹2.4Cr</div>
-                          <div className="text-sm text-muted-foreground">Daily Revenue</div>
-                          <div className="text-xs text-amber-600 mt-1">+12% this month</div>
+                        <div className="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-lg">
+                          <div className="text-3xl font-bold text-green-600">99.2%</div>
+                          <div className="text-sm text-muted-foreground">System Uptime</div>
+                          <div className="text-xs text-green-600 mt-1">+0.3% this month</div>
                         </div>
                       </div>
                     </CardContent>
@@ -2149,13 +2186,17 @@ function NECEngineerDashboard() {
 
           <div className="p-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-              <TabsList className="grid grid-cols-5 lg:w-fit">
-                <TabsTrigger value="monitoring" data-testid="tab-monitoring">Monitoring</TabsTrigger>
-                <TabsTrigger value="devices" data-testid="tab-devices">Devices</TabsTrigger>
-                <TabsTrigger value="maintenance" data-testid="tab-maintenance">Maintenance</TabsTrigger>
-                <TabsTrigger value="analytics" data-testid="tab-analytics">Analytics</TabsTrigger>
-                <TabsTrigger value="reports" data-testid="tab-reports">Reports</TabsTrigger>
-              </TabsList>
+              {/* TabsList removed - Navigation handled by Sidebar only
+              <div className="overflow-x-auto">
+                <TabsList className="grid grid-cols-5 w-max min-w-full lg:w-fit">
+                  <TabsTrigger value="monitoring" data-testid="tab-monitoring" className="whitespace-nowrap">Monitoring</TabsTrigger>
+                  <TabsTrigger value="devices" data-testid="tab-devices" className="whitespace-nowrap">Devices</TabsTrigger>
+                  <TabsTrigger value="maintenance" data-testid="tab-maintenance" className="whitespace-nowrap">Maintenance</TabsTrigger>
+                  <TabsTrigger value="analytics" data-testid="tab-analytics" className="whitespace-nowrap">Analytics</TabsTrigger>
+                  <TabsTrigger value="reports" data-testid="tab-reports" className="whitespace-nowrap">Reports</TabsTrigger>
+                </TabsList>
+              </div>
+              */}
 
               <TabsContent value="monitoring" className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -2714,19 +2755,26 @@ function NECAdminDashboard() {
 
           <div className="p-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-              <TabsList className="grid grid-cols-8 lg:w-fit">
-                <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
-                <TabsTrigger value="devices" data-testid="tab-devices">Device Management</TabsTrigger>
-                <TabsTrigger value="users" data-testid="tab-users">User Management</TabsTrigger>
-                <TabsTrigger value="configuration" data-testid="tab-configuration">Configuration</TabsTrigger>
-                <TabsTrigger value="analytics" data-testid="tab-analytics">Analytics</TabsTrigger>
-                <TabsTrigger value="alerts" data-testid="tab-alerts">Alerts</TabsTrigger>
-                <TabsTrigger value="reports" data-testid="tab-reports">Reports</TabsTrigger>
-                <TabsTrigger value="logs" data-testid="tab-logs">System Logs</TabsTrigger>
-              </TabsList>
+              {/* TabsList removed - Navigation handled by Sidebar only
+              <div className="overflow-x-auto">
+                <TabsList className="grid grid-cols-10 w-max min-w-full lg:w-fit gap-1">
+                  <TabsTrigger value="overview" data-testid="tab-overview" className="whitespace-nowrap text-xs lg:text-sm px-2 lg:px-3">Overview</TabsTrigger>
+                  <TabsTrigger value="devices" data-testid="tab-devices" className="whitespace-nowrap text-xs lg:text-sm px-2 lg:px-3">Devices</TabsTrigger>
+                  <TabsTrigger value="users" data-testid="tab-users" className="whitespace-nowrap text-xs lg:text-sm px-2 lg:px-3">Users</TabsTrigger>
+                  <TabsTrigger value="notifications" data-testid="tab-notifications" className="whitespace-nowrap text-xs lg:text-sm px-2 lg:px-3">Notifications</TabsTrigger>
+                  <TabsTrigger value="vendor-integration" data-testid="tab-vendor-integration" className="whitespace-nowrap text-xs lg:text-sm px-2 lg:px-3">Vendors</TabsTrigger>
+                  <TabsTrigger value="configuration" data-testid="tab-configuration" className="whitespace-nowrap text-xs lg:text-sm px-2 lg:px-3">Config</TabsTrigger>
+                  <TabsTrigger value="analytics" data-testid="tab-analytics" className="whitespace-nowrap text-xs lg:text-sm px-2 lg:px-3">Analytics</TabsTrigger>
+                  <TabsTrigger value="alerts" data-testid="tab-alerts" className="whitespace-nowrap text-xs lg:text-sm px-2 lg:px-3">Alerts</TabsTrigger>
+                  <TabsTrigger value="reports" data-testid="tab-reports" className="whitespace-nowrap text-xs lg:text-sm px-2 lg:px-3">Reports</TabsTrigger>
+                  <TabsTrigger value="logs" data-testid="tab-logs" className="whitespace-nowrap text-xs lg:text-sm px-2 lg:px-3">Logs</TabsTrigger>
+                </TabsList>
+              </div>
+              */}
 
               <TabsContent value="overview" className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                {/* Enhanced Statistics Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">Total Devices</CardTitle>
@@ -2735,6 +2783,10 @@ function NECAdminDashboard() {
                     <CardContent>
                       <div className="text-2xl font-bold">5,120</div>
                       <p className="text-xs text-muted-foreground">Across all regions</p>
+                      <div className="flex items-center text-xs text-green-600 mt-1">
+                        <TrendingUp className="h-3 w-3 mr-1" />
+                        +2.3% from last month
+                      </div>
                     </CardContent>
                   </Card>
 
@@ -2746,6 +2798,10 @@ function NECAdminDashboard() {
                     <CardContent>
                       <div className="text-2xl font-bold">847</div>
                       <p className="text-xs text-muted-foreground">System users</p>
+                      <div className="flex items-center text-xs text-blue-600 mt-1">
+                        <Users className="h-3 w-3 mr-1" />
+                        124 online now
+                      </div>
                     </CardContent>
                   </Card>
 
@@ -2757,6 +2813,7 @@ function NECAdminDashboard() {
                     <CardContent>
                       <div className="text-2xl font-bold text-green-600">98.5%</div>
                       <p className="text-xs text-muted-foreground">Overall health</p>
+                      <Progress value={98.5} className="h-2 mt-2" />
                     </CardContent>
                   </Card>
 
@@ -2768,6 +2825,196 @@ function NECAdminDashboard() {
                     <CardContent>
                       <div className="text-2xl font-bold text-orange-600">23</div>
                       <p className="text-xs text-muted-foreground">Require attention</p>
+                      <div className="flex items-center text-xs text-red-600 mt-1">
+                        <AlertTriangle className="h-3 w-3 mr-1" />
+                        5 critical
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Real-time System Metrics */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Geographic Distribution</CardTitle>
+                      <CardDescription>Device deployment across regions</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-center">
+                          <span className="font-medium">Maharashtra</span>
+                          <div className="flex items-center gap-2">
+                            <div className="w-20 bg-gray-200 rounded-full h-2">
+                              <div className="bg-blue-600 h-2 rounded-full" style={{width: '85%'}}></div>
+                            </div>
+                            <span className="text-sm font-bold">1,547</span>
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="font-medium">Gujarat</span>
+                          <div className="flex items-center gap-2">
+                            <div className="w-20 bg-gray-200 rounded-full h-2">
+                              <div className="bg-green-600 h-2 rounded-full" style={{width: '72%'}}></div>
+                            </div>
+                            <span className="text-sm font-bold">1,234</span>
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="font-medium">Karnataka</span>
+                          <div className="flex items-center gap-2">
+                            <div className="w-20 bg-gray-200 rounded-full h-2">
+                              <div className="bg-purple-600 h-2 rounded-full" style={{width: '68%'}}></div>
+                            </div>
+                            <span className="text-sm font-bold">987</span>
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="font-medium">Tamil Nadu</span>
+                          <div className="flex items-center gap-2">
+                            <div className="w-20 bg-gray-200 rounded-full h-2">
+                              <div className="bg-orange-600 h-2 rounded-full" style={{width: '55%'}}></div>
+                            </div>
+                            <span className="text-sm font-bold">756</span>
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="font-medium">Others</span>
+                          <div className="flex items-center gap-2">
+                            <div className="w-20 bg-gray-200 rounded-full h-2">
+                              <div className="bg-gray-600 h-2 rounded-full" style={{width: '35%'}}></div>
+                            </div>
+                            <span className="text-sm font-bold">596</span>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Transaction Volume</CardTitle>
+                      <CardDescription>Real-time transaction processing</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-muted-foreground">Today</span>
+                          <span className="text-2xl font-bold text-green-600">4.2M</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-muted-foreground">This Hour</span>
+                          <span className="text-lg font-bold">187K</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-muted-foreground">Per Second (Avg)</span>
+                          <span className="text-lg font-bold">52</span>
+                        </div>
+                        <div className="mt-4 p-3 bg-green-50 rounded-lg">
+                          <div className="flex items-center text-green-700">
+                            <TrendingUp className="h-4 w-4 mr-2" />
+                            <span className="text-sm font-medium">Peak: 12.8M transactions (Last Thursday)</span>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* System Performance Dashboard */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Network Status</CardTitle>
+                      <CardDescription>Real-time connectivity</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">Primary Network</span>
+                          <div className="flex items-center">
+                            <div className="h-2 w-2 bg-green-500 rounded-full mr-2"></div>
+                            <span className="text-sm font-medium">99.8% Up</span>
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">Backup Network</span>
+                          <div className="flex items-center">
+                            <div className="h-2 w-2 bg-green-500 rounded-full mr-2"></div>
+                            <span className="text-sm font-medium">Available</span>
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">Latency (Avg)</span>
+                          <span className="text-sm font-medium">12ms</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">Bandwidth Usage</span>
+                          <span className="text-sm font-medium">67%</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Maintenance Schedule</CardTitle>
+                      <CardDescription>Upcoming maintenance windows</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="border-l-4 border-orange-500 pl-3">
+                          <div className="text-sm font-medium">Network Upgrade</div>
+                          <div className="text-xs text-muted-foreground">Tomorrow 2:00-4:00 AM</div>
+                        </div>
+                        <div className="border-l-4 border-blue-500 pl-3">
+                          <div className="text-sm font-medium">Database Optimization</div>
+                          <div className="text-xs text-muted-foreground">Sep 6, 1:00-3:00 AM</div>
+                        </div>
+                        <div className="border-l-4 border-green-500 pl-3">
+                          <div className="text-sm font-medium">Security Patch</div>
+                          <div className="text-xs text-muted-foreground">Sep 8, 3:00-5:00 AM</div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Resource Usage</CardTitle>
+                      <CardDescription>System resource monitoring</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span>CPU Usage</span>
+                            <span>42%</span>
+                          </div>
+                          <Progress value={42} className="h-2" />
+                        </div>
+                        <div>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span>Memory Usage</span>
+                            <span>68%</span>
+                          </div>
+                          <Progress value={68} className="h-2" />
+                        </div>
+                        <div>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span>Storage Usage</span>
+                            <span>34%</span>
+                          </div>
+                          <Progress value={34} className="h-2" />
+                        </div>
+                        <div>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span>Database Load</span>
+                            <span>71%</span>
+                          </div>
+                          <Progress value={71} className="h-2" />
+                        </div>
+                      </div>
                     </CardContent>
                   </Card>
                 </div>
@@ -2779,7 +3026,7 @@ function NECAdminDashboard() {
                     <CardDescription>Common administrative tasks</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
                       <Button variant="outline" className="h-20 flex-col">
                         <UserPlus className="h-6 w-6 mb-2" />
                         Add User
@@ -2796,9 +3043,101 @@ function NECAdminDashboard() {
                         <RefreshCw className="h-6 w-6 mb-2" />
                         Sync Devices
                       </Button>
+                      <Button variant="outline" className="h-20 flex-col">
+                        <Database className="h-6 w-6 mb-2" />
+                        Backup Now
+                      </Button>
+                      <Button variant="outline" className="h-20 flex-col">
+                        <Shield className="h-6 w-6 mb-2" />
+                        Security Scan
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
+
+                {/* Recent Activities Feed */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Recent System Activities</CardTitle>
+                      <CardDescription>Latest system events and actions</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="flex items-start space-x-3">
+                          <div className="h-2 w-2 bg-green-500 rounded-full mt-2"></div>
+                          <div className="flex-1">
+                            <div className="text-sm font-medium">Device Configuration Updated</div>
+                            <div className="text-xs text-muted-foreground">Mumbai Toll Plaza - 2 minutes ago</div>
+                          </div>
+                        </div>
+                        <div className="flex items-start space-x-3">
+                          <div className="h-2 w-2 bg-blue-500 rounded-full mt-2"></div>
+                          <div className="flex-1">
+                            <div className="text-sm font-medium">New User Registered</div>
+                            <div className="text-xs text-muted-foreground">NEC Engineer - Pune Region - 5 minutes ago</div>
+                          </div>
+                        </div>
+                        <div className="flex items-start space-x-3">
+                          <div className="h-2 w-2 bg-orange-500 rounded-full mt-2"></div>
+                          <div className="flex-1">
+                            <div className="text-sm font-medium">Maintenance Alert Resolved</div>
+                            <div className="text-xs text-muted-foreground">Chennai Plaza Device #4251 - 8 minutes ago</div>
+                          </div>
+                        </div>
+                        <div className="flex items-start space-x-3">
+                          <div className="h-2 w-2 bg-purple-500 rounded-full mt-2"></div>
+                          <div className="flex-1">
+                            <div className="text-sm font-medium">Firmware Update Completed</div>
+                            <div className="text-xs text-muted-foreground">Batch update: 156 devices - 12 minutes ago</div>
+                          </div>
+                        </div>
+                        <div className="flex items-start space-x-3">
+                          <div className="h-2 w-2 bg-red-500 rounded-full mt-2"></div>
+                          <div className="flex-1">
+                            <div className="text-sm font-medium">Security Scan Initiated</div>
+                            <div className="text-xs text-muted-foreground">Network vulnerability assessment - 15 minutes ago</div>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Critical Alerts Summary</CardTitle>
+                      <CardDescription>High priority issues requiring attention</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="border-l-4 border-red-500 pl-3 bg-red-50 p-3 rounded">
+                          <div className="text-sm font-medium text-red-800">Critical: Device Offline</div>
+                          <div className="text-xs text-red-600">Bangalore Plaza - Reader #BLR-001 - 45 minutes</div>
+                          <Button size="sm" variant="outline" className="mt-2">
+                            <ExternalLink className="h-3 w-3 mr-1" />
+                            Investigate
+                          </Button>
+                        </div>
+                        <div className="border-l-4 border-orange-500 pl-3 bg-orange-50 p-3 rounded">
+                          <div className="text-sm font-medium text-orange-800">High: Network Latency</div>
+                          <div className="text-xs text-orange-600">North Region - Average 85ms (threshold: 50ms)</div>
+                          <Button size="sm" variant="outline" className="mt-2">
+                            <ExternalLink className="h-3 w-3 mr-1" />
+                            Diagnose
+                          </Button>
+                        </div>
+                        <div className="border-l-4 border-yellow-500 pl-3 bg-yellow-50 p-3 rounded">
+                          <div className="text-sm font-medium text-yellow-800">Medium: Storage Warning</div>
+                          <div className="text-xs text-yellow-600">Database storage 78% full - cleanup recommended</div>
+                          <Button size="sm" variant="outline" className="mt-2">
+                            <ExternalLink className="h-3 w-3 mr-1" />
+                            Schedule
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
               </TabsContent>
 
               <TabsContent value="devices" className="space-y-6">
@@ -2874,7 +3213,15 @@ function NECAdminDashboard() {
               </TabsContent>
 
               <TabsContent value="users" className="space-y-6">
-                <UserManagementInterface />
+                <UserManagement />
+              </TabsContent>
+
+              <TabsContent value="notifications" className="space-y-6">
+                <NotificationManagement />
+              </TabsContent>
+
+              <TabsContent value="vendor-integration" className="space-y-6">
+                <VendorIntegrationManagement />
               </TabsContent>
 
               <TabsContent value="configuration" className="space-y-6">
@@ -2935,29 +3282,241 @@ function NECAdminDashboard() {
               </TabsContent>
 
               <TabsContent value="analytics" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Device Type Performance Comparison</CardTitle>
-                    <CardDescription>Health and efficiency metrics by device type</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={deviceTypeData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" />
-                        <YAxis />
-                        <Tooltip />
-                        <Legend />
-                        <Bar dataKey="health" fill="#22c55e" name="Health Score" />
-                        <Bar dataKey="efficiency" fill="#3b82f6" name="Efficiency %" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
-                
+                {/* Advanced Analytics Dashboard */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Performance Trends</CardTitle>
+                      <CardDescription>30-day performance overview</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">Device Uptime</span>
+                          <div className="flex items-center">
+                            <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
+                            <span className="text-sm font-bold text-green-600">+2.3%</span>
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">Transaction Volume</span>
+                          <div className="flex items-center">
+                            <TrendingUp className="h-4 w-4 text-blue-500 mr-1" />
+                            <span className="text-sm font-bold text-blue-600">+12.5%</span>
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">Response Time</span>
+                          <div className="flex items-center">
+                            <TrendingDown className="h-4 w-4 text-green-500 mr-1" />
+                            <span className="text-sm font-bold text-green-600">-8.2%</span>
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">Error Rate</span>
+                          <div className="flex items-center">
+                            <TrendingDown className="h-4 w-4 text-green-500 mr-1" />
+                            <span className="text-sm font-bold text-green-600">-15.4%</span>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Device Health Distribution</CardTitle>
+                      <CardDescription>Current health status breakdown</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center">
+                            <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                            <span className="text-sm">Excellent (90-100%)</span>
+                          </div>
+                          <span className="text-sm font-bold">3,256</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center">
+                            <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
+                            <span className="text-sm">Good (70-89%)</span>
+                          </div>
+                          <span className="text-sm font-bold">1,432</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center">
+                            <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
+                            <span className="text-sm">Fair (50-69%)</span>
+                          </div>
+                          <span className="text-sm font-bold">298</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center">
+                            <div className="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
+                            <span className="text-sm">Poor (Below 50%)</span>
+                          </div>
+                          <span className="text-sm font-bold">134</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Predictive Insights</CardTitle>
+                      <CardDescription>AI-powered predictions</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="p-3 bg-orange-50 rounded-lg border border-orange-200">
+                          <div className="text-sm font-medium text-orange-800">Maintenance Prediction</div>
+                          <div className="text-xs text-orange-600">23 devices likely to need maintenance in next 7 days</div>
+                        </div>
+                        <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                          <div className="text-sm font-medium text-blue-800">Traffic Pattern</div>
+                          <div className="text-xs text-blue-600">Peak usage expected tomorrow 2-4 PM</div>
+                        </div>
+                        <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+                          <div className="text-sm font-medium text-green-800">Optimization Opportunity</div>
+                          <div className="text-xs text-green-600">Network routing can be improved by 12%</div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Performance Charts */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Device Type Performance Comparison</CardTitle>
+                      <CardDescription>Health and efficiency metrics by device type</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={deviceTypeData}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="name" />
+                          <YAxis />
+                          <Tooltip />
+                          <Legend />
+                          <Bar dataKey="health" fill="#22c55e" name="Health Score" />
+                          <Bar dataKey="efficiency" fill="#3b82f6" name="Efficiency %" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Transaction Volume Trends</CardTitle>
+                      <CardDescription>Daily transaction processing over time</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <AreaChart data={performanceData}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="name" />
+                          <YAxis />
+                          <Tooltip />
+                          <Area type="monotone" dataKey="devices" stackId="1" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} name="Transaction Count (K)" />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Advanced Analytics Tables */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Top Performing Regions</CardTitle>
+                      <CardDescription>Regions with highest device performance</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center p-3 border rounded">
+                          <div>
+                            <div className="font-medium">Maharashtra West</div>
+                            <div className="text-sm text-muted-foreground">1,547 devices</div>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-bold text-green-600">97.8%</div>
+                            <div className="text-sm text-muted-foreground">Health Score</div>
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-center p-3 border rounded">
+                          <div>
+                            <div className="font-medium">Gujarat Central</div>
+                            <div className="text-sm text-muted-foreground">1,234 devices</div>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-bold text-green-600">96.5%</div>
+                            <div className="text-sm text-muted-foreground">Health Score</div>
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-center p-3 border rounded">
+                          <div>
+                            <div className="font-medium">Karnataka South</div>
+                            <div className="text-sm text-muted-foreground">987 devices</div>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-bold text-green-600">95.2%</div>
+                            <div className="text-sm text-muted-foreground">Health Score</div>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Critical Issues Trending</CardTitle>
+                      <CardDescription>Most common issues requiring attention</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center p-3 border rounded border-red-200 bg-red-50">
+                          <div>
+                            <div className="font-medium text-red-800">Network Timeouts</div>
+                            <div className="text-sm text-red-600">Connectivity issues</div>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-bold text-red-600">156</div>
+                            <div className="text-sm text-red-600">devices affected</div>
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-center p-3 border rounded border-orange-200 bg-orange-50">
+                          <div>
+                            <div className="font-medium text-orange-800">High Temperature</div>
+                            <div className="text-sm text-orange-600">Thermal management</div>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-bold text-orange-600">89</div>
+                            <div className="text-sm text-orange-600">devices affected</div>
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-center p-3 border rounded border-yellow-200 bg-yellow-50">
+                          <div>
+                            <div className="font-medium text-yellow-800">Firmware Updates</div>
+                            <div className="text-sm text-yellow-600">Version compatibility</div>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-bold text-yellow-600">67</div>
+                            <div className="text-sm text-yellow-600">pending updates</div>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Configuration Deployment Timeline */}
                 <Card>
                   <CardHeader>
                     <CardTitle>Configuration Deployment Timeline</CardTitle>
+                    <CardDescription>Real-time configuration deployment progress</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <ResponsiveContainer width="100%" height={250}>
@@ -2967,6 +3526,7 @@ function NECAdminDashboard() {
                         <YAxis />
                         <Tooltip />
                         <Line type="monotone" dataKey="devices" stroke="#8884d8" strokeWidth={2} name="Configured Devices" />
+                        <Line type="monotone" dataKey="health" stroke="#22c55e" strokeWidth={2} name="Success Rate %" />
                       </LineChart>
                     </ResponsiveContainer>
                   </CardContent>
@@ -2974,47 +3534,286 @@ function NECAdminDashboard() {
               </TabsContent>
 
               <TabsContent value="logs" className="space-y-6">
+                {/* Log Filters and Search */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Log Management</CardTitle>
+                    <CardDescription>Filter and search system logs</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-col md:flex-row gap-4 mb-4">
+                      <div className="flex-1">
+                        <Input placeholder="Search logs..." className="w-full" />
+                      </div>
+                      <Select defaultValue="all">
+                        <SelectTrigger className="w-40">
+                          <SelectValue placeholder="Log Level" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Levels</SelectItem>
+                          <SelectItem value="error">Errors</SelectItem>
+                          <SelectItem value="warning">Warnings</SelectItem>
+                          <SelectItem value="info">Info</SelectItem>
+                          <SelectItem value="success">Success</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Select defaultValue="today">
+                        <SelectTrigger className="w-40">
+                          <SelectValue placeholder="Time Range" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="today">Today</SelectItem>
+                          <SelectItem value="week">This Week</SelectItem>
+                          <SelectItem value="month">This Month</SelectItem>
+                          <SelectItem value="custom">Custom Range</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button variant="outline">
+                        <Download className="h-4 w-4 mr-2" />
+                        Export
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Real-time Log Statistics */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-2xl font-bold text-red-600">23</div>
+                          <div className="text-sm text-muted-foreground">Errors (Last 24h)</div>
+                        </div>
+                        <AlertTriangle className="h-8 w-8 text-red-500" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-2xl font-bold text-orange-600">156</div>
+                          <div className="text-sm text-muted-foreground">Warnings (Last 24h)</div>
+                        </div>
+                        <AlertTriangle className="h-8 w-8 text-orange-500" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-2xl font-bold text-blue-600">1,247</div>
+                          <div className="text-sm text-muted-foreground">Info Events (Last 24h)</div>
+                        </div>
+                        <Activity className="h-8 w-8 text-blue-500" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-2xl font-bold text-green-600">3,892</div>
+                          <div className="text-sm text-muted-foreground">Success Events (Last 24h)</div>
+                        </div>
+                        <CheckCircle className="h-8 w-8 text-green-500" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Detailed Log Viewer */}
                 <Card>
                   <CardHeader>
                     <CardTitle>System Operation Logs</CardTitle>
-                    <CardDescription>Recent system changes and operations</CardDescription>
+                    <CardDescription>Real-time system events and operations</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-3 max-h-96 overflow-y-auto">
-                      <div className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <Badge variant="outline" className="bg-green-50 text-green-700">SUCCESS</Badge>
-                          <span className="text-sm">Device FR_MUM_001 firmware updated to v3.2.1</span>
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                        <div className="flex items-center gap-3 flex-1">
+                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">SUCCESS</Badge>
+                          <div className="flex-1">
+                            <div className="text-sm font-medium">Device firmware update completed</div>
+                            <div className="text-xs text-muted-foreground">FR_MUM_001 → v3.2.1 (User: admin@nec.com)</div>
+                          </div>
                         </div>
-                        <span className="text-xs text-muted-foreground">2 minutes ago</span>
+                        <div className="text-right">
+                          <div className="text-xs text-muted-foreground">2024-09-04 14:32:15</div>
+                          <div className="text-xs text-muted-foreground">2 minutes ago</div>
+                        </div>
                       </div>
                       
-                      <div className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <Badge variant="outline" className="bg-orange-50 text-orange-700">WARNING</Badge>
-                          <span className="text-sm">Configuration deployment failed for HHD_CHE_001</span>
+                      <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                        <div className="flex items-center gap-3 flex-1">
+                          <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">WARNING</Badge>
+                          <div className="flex-1">
+                            <div className="text-sm font-medium">Configuration deployment failed</div>
+                            <div className="text-xs text-muted-foreground">HHD_CHE_001 → Network timeout (Retry #2)</div>
+                          </div>
                         </div>
-                        <span className="text-xs text-muted-foreground">8 minutes ago</span>
+                        <div className="text-right">
+                          <div className="text-xs text-muted-foreground">2024-09-04 14:24:33</div>
+                          <div className="text-xs text-muted-foreground">8 minutes ago</div>
+                        </div>
                       </div>
                       
-                      <div className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <Badge variant="outline" className="bg-blue-50 text-blue-700">INFO</Badge>
-                          <span className="text-sm">Bulk configuration applied to 245 devices</span>
+                      <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                        <div className="flex items-center gap-3 flex-1">
+                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">INFO</Badge>
+                          <div className="flex-1">
+                            <div className="text-sm font-medium">Bulk configuration deployment initiated</div>
+                            <div className="text-xs text-muted-foreground">245 devices selected → Config v2.1.8 (User: admin@nec.com)</div>
+                          </div>
                         </div>
-                        <span className="text-xs text-muted-foreground">15 minutes ago</span>
+                        <div className="text-right">
+                          <div className="text-xs text-muted-foreground">2024-09-04 14:17:45</div>
+                          <div className="text-xs text-muted-foreground">15 minutes ago</div>
+                        </div>
                       </div>
                       
-                      <div className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <Badge variant="outline" className="bg-red-50 text-red-700">ERROR</Badge>
-                          <span className="text-sm">Network timeout for FR_KOL_002</span>
+                      <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                        <div className="flex items-center gap-3 flex-1">
+                          <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">ERROR</Badge>
+                          <div className="flex-1">
+                            <div className="text-sm font-medium">Critical device connectivity failure</div>
+                            <div className="text-xs text-muted-foreground">FR_KOL_002 → Network timeout (Escalated to operations)</div>
+                          </div>
                         </div>
-                        <span className="text-xs text-muted-foreground">1 hour ago</span>
+                        <div className="text-right">
+                          <div className="text-xs text-muted-foreground">2024-09-04 13:35:22</div>
+                          <div className="text-xs text-muted-foreground">1 hour ago</div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                        <div className="flex items-center gap-3 flex-1">
+                          <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">SECURITY</Badge>
+                          <div className="flex-1">
+                            <div className="text-sm font-medium">User login successful</div>
+                            <div className="text-xs text-muted-foreground">engineer@nec.com → IP: 192.168.1.105 (2FA verified)</div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-xs text-muted-foreground">2024-09-04 13:22:11</div>
+                          <div className="text-xs text-muted-foreground">1 hour ago</div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                        <div className="flex items-center gap-3 flex-1">
+                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">SUCCESS</Badge>
+                          <div className="flex-1">
+                            <div className="text-sm font-medium">Database backup completed</div>
+                            <div className="text-xs text-muted-foreground">Automated backup → 2.4GB (Retention: 30 days)</div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-xs text-muted-foreground">2024-09-04 12:00:00</div>
+                          <div className="text-xs text-muted-foreground">2 hours ago</div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                        <div className="flex items-center gap-3 flex-1">
+                          <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">MAINTENANCE</Badge>
+                          <div className="flex-1">
+                            <div className="text-sm font-medium">Scheduled maintenance started</div>
+                            <div className="text-xs text-muted-foreground">Mumbai Region → Network optimization (Estimated: 2 hours)</div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-xs text-muted-foreground">2024-09-04 11:45:30</div>
+                          <div className="text-xs text-muted-foreground">3 hours ago</div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-4 flex justify-between items-center">
+                      <div className="text-sm text-muted-foreground">
+                        Showing 7 of 1,247 entries from today
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm">Previous</Button>
+                        <Button variant="outline" size="sm">Next</Button>
+                        <Button variant="outline" size="sm">
+                          <RefreshCw className="h-4 w-4 mr-1" />
+                          Refresh
+                        </Button>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
+
+                {/* Log Analytics */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Error Frequency Trend</CardTitle>
+                      <CardDescription>Error count over the last 7 days</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={200}>
+                        <LineChart data={performanceData}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="name" />
+                          <YAxis />
+                          <Tooltip />
+                          <Line type="monotone" dataKey="health" stroke="#ef4444" strokeWidth={2} name="Error Count" />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Common Error Categories</CardTitle>
+                      <CardDescription>Most frequent error types</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">Network Connectivity</span>
+                          <div className="flex items-center gap-2">
+                            <div className="w-20 bg-gray-200 rounded-full h-2">
+                              <div className="bg-red-500 h-2 rounded-full" style={{width: '78%'}}></div>
+                            </div>
+                            <span className="text-sm font-bold">156</span>
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">Configuration Errors</span>
+                          <div className="flex items-center gap-2">
+                            <div className="w-20 bg-gray-200 rounded-full h-2">
+                              <div className="bg-orange-500 h-2 rounded-full" style={{width: '45%'}}></div>
+                            </div>
+                            <span className="text-sm font-bold">89</span>
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">Hardware Issues</span>
+                          <div className="flex items-center gap-2">
+                            <div className="w-20 bg-gray-200 rounded-full h-2">
+                              <div className="bg-yellow-500 h-2 rounded-full" style={{width: '23%'}}></div>
+                            </div>
+                            <span className="text-sm font-bold">34</span>
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">Security Events</span>
+                          <div className="flex items-center gap-2">
+                            <div className="w-20 bg-gray-200 rounded-full h-2">
+                              <div className="bg-purple-500 h-2 rounded-full" style={{width: '12%'}}></div>
+                            </div>
+                            <span className="text-sm font-bold">12</span>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
               </TabsContent>
 
               <TabsContent value="alerts" className="space-y-6">
@@ -3249,12 +4048,16 @@ function ClientDashboard() {
 
           <div className="p-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-              <TabsList className="grid grid-cols-4 lg:w-fit">
-                <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
-                <TabsTrigger value="analytics" data-testid="tab-analytics">Analytics</TabsTrigger>
-                <TabsTrigger value="reports" data-testid="tab-reports">Reports</TabsTrigger>
-                <TabsTrigger value="service" data-testid="tab-service">Service Levels</TabsTrigger>
-              </TabsList>
+              {/* TabsList removed - Navigation handled by Sidebar only
+              <div className="overflow-x-auto">
+                <TabsList className="grid grid-cols-4 w-max min-w-full lg:w-fit">
+                  <TabsTrigger value="overview" data-testid="tab-overview" className="whitespace-nowrap">Overview</TabsTrigger>
+                  <TabsTrigger value="analytics" data-testid="tab-analytics" className="whitespace-nowrap">Analytics</TabsTrigger>
+                  <TabsTrigger value="reports" data-testid="tab-reports" className="whitespace-nowrap">Reports</TabsTrigger>
+                  <TabsTrigger value="service" data-testid="tab-service" className="whitespace-nowrap">Service Levels</TabsTrigger>
+                </TabsList>
+              </div>
+              */}
 
               <TabsContent value="overview" className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -4174,14 +4977,34 @@ export default function RoleDashboard() {
   // Render appropriate dashboard based on user role
   switch (user.role) {
     case 'NEC_GENERAL':
-      return <NECGeneralDashboard />;
+      return (
+        <Suspense fallback={<LoadingFallback />}>
+          <NECGeneralDashboard />
+        </Suspense>
+      );
     case 'NEC_ENGINEER':
-      return <NECEngineerDashboard />;
+      return (
+        <Suspense fallback={<LoadingFallback />}>
+          <NECEngineerDashboard />
+        </Suspense>
+      );
     case 'NEC_ADMIN':
-      return <NECAdminDashboard />;
+      return (
+        <Suspense fallback={<LoadingFallback />}>
+          <NECAdminDashboard />
+        </Suspense>
+      );
     case 'CLIENT':
-      return <ClientDashboard />;
+      return (
+        <Suspense fallback={<LoadingFallback />}>
+          <ClientDashboard />
+        </Suspense>
+      );
     default:
-      return <ClientDashboard />; // Default to most restrictive view
+      return (
+        <Suspense fallback={<LoadingFallback />}>
+          <ClientDashboard />
+        </Suspense>
+      ); // Default to most restrictive view
   }
 }

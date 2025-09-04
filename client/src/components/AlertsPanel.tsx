@@ -11,7 +11,8 @@ export default function AlertsPanel() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: alerts, isLoading } = useQuery({
+  // Alerts API may return either an array (legacy) or a paginated object { success, data, pagination }
+  const { data: alerts, isLoading } = useQuery<{ success?: boolean; data?: any[]; pagination?: { total?: number } } | any[]>({
     queryKey: ["/api/alerts"],
     refetchInterval: 30 * 1000,
   });
@@ -175,7 +176,16 @@ export default function AlertsPanel() {
     );
   }
 
-  const recentAlerts = alerts?.slice(0, 5) || [];
+  // Normalize alerts to an array regardless of API shape
+  const alertsArray: any[] = Array.isArray(alerts)
+    ? (alerts as any[])
+    : (alerts?.data ?? []);
+
+  const totalAlertsCount = Array.isArray(alerts)
+    ? (alerts as any[]).length
+    : (alerts?.pagination?.total ?? alertsArray.length ?? 0);
+
+  const recentAlerts = alertsArray.slice(0, 5);
 
   return (
     <Card>
@@ -265,13 +275,13 @@ export default function AlertsPanel() {
           ))
         )}
         
-        {recentAlerts.length > 0 && (
+    {recentAlerts.length > 0 && (
           <Button 
             variant="ghost" 
             className="w-full text-primary hover:bg-primary/5"
             data-testid="button-view-all-alerts"
           >
-            View All Alerts ({alerts?.length || 0})
+      View All Alerts ({totalAlertsCount})
           </Button>
         )}
       </CardContent>

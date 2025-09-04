@@ -3,10 +3,13 @@ import { useQuery } from "@tanstack/react-query";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 
 export default function LocationWiseDeviceStatus() {
-  const { data: devices, isLoading } = useQuery<Array<any>>({
+  const { data: devicesResponse, isLoading } = useQuery<{success: boolean, data: any[]}>({
     queryKey: ["/api/devices"],
     refetchInterval: 30 * 1000,
   });
+
+  // Extract devices array from response
+  const devices = devicesResponse?.data || [];
 
   if (isLoading) {
     return (
@@ -94,7 +97,7 @@ export default function LocationWiseDeviceStatus() {
                   <span style={{ color: colorMap[name] || '#000' }}>
                     {value} devices
                   </span>,
-                  name.charAt(0).toUpperCase() + name.slice(1)
+                  String(name).charAt(0).toUpperCase() + String(name).slice(1)
                 ];
               }}
               labelFormatter={(label) => `Region: ${label}`}

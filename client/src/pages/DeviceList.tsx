@@ -46,10 +46,13 @@ export default function DeviceList() {
     }
   }, [params?.filter]);
 
-  const { data: devices = [], isLoading } = useQuery({
+  const { data: devicesResponse, isLoading } = useQuery<{success: boolean, data: any[]}>({
     queryKey: ["/api/devices"],
     refetchInterval: 30 * 1000,
   });
+
+  // Extract devices array from response
+  const devices = devicesResponse?.data || [];
 
   // Filter devices based on current filters
   const filteredDevices = Array.isArray(devices) ? devices.filter((device: any) => {

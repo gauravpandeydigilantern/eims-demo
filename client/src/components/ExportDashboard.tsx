@@ -42,9 +42,13 @@ export default function ExportDashboard() {
 
   const [isExporting, setIsExporting] = useState(false);
 
-  const { data: devices } = useQuery<Array<any>>({
+  const { data: devicesResponse } = useQuery<{success: boolean, data: any[]}>({
     queryKey: ["/api/devices"],
+    refetchInterval: 30 * 1000,
   });
+
+  // Extract devices array from response
+  const devices = devicesResponse?.data || [];
 
   const { data: statusSummary } = useQuery<Array<{status: string; count: number}>>({
     queryKey: ["/api/analytics/status-summary"],

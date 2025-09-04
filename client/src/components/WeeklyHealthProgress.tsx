@@ -3,10 +3,13 @@ import { Progress } from "@/components/ui/progress";
 import { useQuery } from "@tanstack/react-query";
 
 export default function WeeklyHealthProgress() {
-  const { data: devices, isLoading } = useQuery<Array<any>>({
+  const { data: devicesResponse, isLoading } = useQuery<{success: boolean, data: any[]}>({
     queryKey: ["/api/devices"],
     refetchInterval: 30 * 1000,
   });
+
+  // Extract devices array from response
+  const devices = devicesResponse?.data || [];
 
   if (isLoading) {
     return (

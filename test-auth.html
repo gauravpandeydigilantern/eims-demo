@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Auth Test</title>
+</head>
+<body>
+    <h1>Authentication Test</h1>
+    <div id="status"></div>
+    <button onclick="testLogin()">Test Login</button>
+    <button onclick="testAuth()">Test Auth Check</button>
+    <button onclick="testLogout()">Test Logout</button>
+    
+    <script>
+        const statusDiv = document.getElementById('status');
+        
+        function log(message) {
+            statusDiv.innerHTML += '<div>' + new Date().toLocaleTimeString() + ': ' + message + '</div>';
+        }
+        
+        async function testLogin() {
+            try {
+                log('Testing login...');
+                const response = await fetch('http://localhost:5000/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        email: 'admin@nec.com',
+                        password: 'admin123'
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log('✅ Login SUCCESS: ' + JSON.stringify(data));
+                } else {
+                    const errorText = await response.text();
+                    log('❌ Login FAILED: ' + response.status + ' - ' + errorText);
+                }
+                
+                // Check cookies
+                log('Document cookies: ' + document.cookie);
+                
+            } catch (error) {
+                log('❌ Login NETWORK ERROR: ' + error.message);
+            }
+        }
+        
+        async function testAuth() {
+            try {
+                log('Testing auth check...');
+                const response = await fetch('http://localhost:5000/api/auth/user', {
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log('✅ AUTH SUCCESS: ' + JSON.stringify(data));
+                } else {
+                    const errorText = await response.text();
+                    log('❌ AUTH FAILED: ' + response.status + ' - ' + errorText);
+                }
+                
+            } catch (error) {
+                log('❌ AUTH NETWORK ERROR: ' + error.message);
+            }
+        }
+        
+        async function testLogout() {
+            try {
+                log('Testing logout...');
+                const response = await fetch('http://localhost:5000/api/logout', {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+                
+                const data = await response.json();
+                log('Logout response: ' + JSON.stringify(data));
+                
+            } catch (error) {
+                log('Logout error: ' + error.message);
+            }
+        }
+        
+        // Test auth on page load
+        testAuth();
+    </script>
+</body>
+</html>

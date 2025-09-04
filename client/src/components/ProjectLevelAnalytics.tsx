@@ -69,10 +69,13 @@ export default function ProjectLevelAnalytics() {
   const { user } = useAuth();
 
   // Fetch real data from APIs
-  const { data: devices } = useQuery<Array<any>>({
+  const { data: devicesResponse } = useQuery<{success: boolean, data: any[]}>({
     queryKey: ["/api/devices"],
     refetchInterval: 30 * 1000,
   });
+
+  // Extract devices array from response
+  const devices = devicesResponse?.data || [];
 
   const { data: statusSummary } = useQuery<Array<{status: string; count: number}>>({
     queryKey: ["/api/analytics/status-summary"],
@@ -144,14 +147,12 @@ export default function ProjectLevelAnalytics() {
         vendor, 
         devices: 0, 
         uptime: 0, 
-        revenue: 0, 
         maintenance: 0,
         marketShare: 0
       };
     }
     acc[vendor].devices++;
     if (device.status === 'LIVE') acc[vendor].uptime++;
-    acc[vendor].revenue += Math.floor(Math.random() * 50000) + 10000;
     return acc;
   }, {} as Record<string, any>) || {};
 
@@ -163,7 +164,7 @@ export default function ProjectLevelAnalytics() {
       uptimeRate,
       marketShare,
       roi: Math.floor(Math.random() * 30) + 85, // ROI percentage
-      supportCost: Math.floor(vendor.revenue * 0.15)
+      maintenanceHours: Math.floor(Math.random() * 100) + 20
     };
   });
 
@@ -178,12 +179,12 @@ export default function ProjectLevelAnalytics() {
 
   // Transaction analytics
   const transactionData = [
-    { hour: '00:00', successful: 1200, failed: 12, revenue: 24000 },
-    { hour: '04:00', successful: 800, failed: 8, revenue: 16000 },
-    { hour: '08:00', successful: 2800, failed: 25, revenue: 56000 },
-    { hour: '12:00', successful: 4200, failed: 38, revenue: 84000 },
-    { hour: '16:00', successful: 3800, failed: 22, revenue: 76000 },
-    { hour: '20:00', successful: 2100, failed: 15, revenue: 42000 }
+    { hour: '00:00', successful: 1200, failed: 12, processing: 24 },
+    { hour: '04:00', successful: 800, failed: 8, processing: 16 },
+    { hour: '08:00', successful: 2800, failed: 25, processing: 56 },
+    { hour: '12:00', successful: 4200, failed: 38, processing: 84 },
+    { hour: '16:00', successful: 3800, failed: 22, processing: 76 },
+    { hour: '20:00', successful: 2100, failed: 15, processing: 42 }
   ];
 
   // Device lifecycle analytics
@@ -526,7 +527,7 @@ export default function ProjectLevelAnalytics() {
                     <Legend />
                     <Bar yAxisId="left" dataKey="successful" fill="#22c55e" name="Successful Transactions" />
                     <Bar yAxisId="left" dataKey="failed" fill="#ef4444" name="Failed Transactions" />
-                    <Line yAxisId="right" type="monotone" dataKey="revenue" stroke="#3b82f6" strokeWidth={2} name="Revenue ($)" />
+                    <Line yAxisId="right" type="monotone" dataKey="processing" stroke="#3b82f6" strokeWidth={2} name="Processing Time (ms)" />
                   </ComposedChart>
                 </ResponsiveContainer>
               </ChartContainer>

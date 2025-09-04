@@ -15,29 +15,96 @@ interface DeviceListTableProps {
 export default function DeviceListTable({ onDeviceSelect }: DeviceListTableProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [regionFilter, setRegionFilter] = useState("all");
+  const [deviceTypeFilter, setDeviceTypeFilter] = useState("all");
+  const [healthFilter, setHealthFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
+  const [sortBy, setSortBy] = useState<'id' | 'location' | 'type' | 'status' | 'lastUpdate' | 'health'>('id');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const itemsPerPage = 50;
   const [, setLocation] = useLocation();
 
   const { user } = useAuth();
-  const { data: devices, isLoading } = useQuery<any[]>({
+  const { data: devicesResponse, isLoading, error } = useQuery<{success: boolean, data: any[]}>({
     queryKey: ["/api/devices"],
     refetchInterval: 30 * 1000,
   });
 
-  const filteredDevices = (devices || []).filter((device: any) => {
-    const matchesSearch = device.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         device.tollPlaza.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         device.region.toLowerCase().includes(searchTerm.toLowerCase());
+  // Extract devices array from response
+  const devices = devicesResponse?.data || [];
+  const devicesArray = Array.isArray(devices) ? devices : [];
+
+  // Get unique values for filter options
+  const regionOptions = Array.from(new Set(devicesArray.map((device: any) => device.region).filter(Boolean))) as string[];
+  const deviceTypeOptions = Array.from(new Set(devicesArray.map((device: any) => device.type || device.deviceType).filter(Boolean))) as string[];
+  const healthOptions = ['excellent', 'good', 'fair', 'poor'];
+
+  const filteredDevices = devicesArray.filter((device: any) => {
+    if (!device) return false;
+    
+    const matchesSearch = (device.id || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (device.tollPlaza || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (device.region || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (device.location || '').toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === "all" || device.status === statusFilter;
+    const matchesRegion = regionFilter === "all" || device.region === regionFilter;
+    const matchesDeviceType = deviceTypeFilter === "all" || (device.type || device.deviceType) === deviceTypeFilter;
     
-    return matchesSearch && matchesStatus;
+    const health = device.health || device.healthPercentage || 0;
+    const matchesHealth = healthFilter === "all" || 
+      (healthFilter === "excellent" && health >= 90) ||
+      (healthFilter === "good" && health >= 70 && health < 90) ||
+      (healthFilter === "fair" && health >= 50 && health < 70) ||
+      (healthFilter === "poor" && health < 50);
+    
+    return matchesSearch && matchesStatus && matchesRegion && matchesDeviceType && matchesHealth;
   }) || [];
 
-  const totalPages = Math.ceil(filteredDevices.length / itemsPerPage);
+  // Sort the filtered devices
+  const sortedDevices = [...filteredDevices].sort((a, b) => {
+    let aValue, bValue;
+    
+    switch (sortBy) {
+      case 'id':
+        aValue = a.id || '';
+        bValue = b.id || '';
+        break;
+      case 'location':
+        aValue = `${a.tollPlaza || ''} ${a.region || ''} ${a.zone || ''}`;
+        bValue = `${b.tollPlaza || ''} ${b.region || ''} ${b.zone || ''}`;
+        break;
+      case 'type':
+        aValue = a.deviceType || a.type || '';
+        bValue = b.deviceType || b.type || '';
+        break;
+      case 'status':
+        aValue = a.status || '';
+        bValue = b.status || '';
+        break;
+      case 'lastUpdate':
+        aValue = new Date(a.lastSeen || a.lastUpdate || 0).getTime();
+        bValue = new Date(b.lastSeen || b.lastUpdate || 0).getTime();
+        break;
+      case 'health':
+        aValue = a.health || a.healthPercentage || 0;
+        bValue = b.health || b.healthPercentage || 0;
+        break;
+      default:
+        aValue = a.id || '';
+        bValue = b.id || '';
+    }
+    
+    if (sortOrder === 'asc') {
+      return aValue > bValue ? 1 : -1;
+    } else {
+      return aValue < bValue ? 1 : -1;
+    }
+  });
+
+  const totalPages = Math.ceil(sortedDevices.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedDevices = filteredDevices.slice(startIndex, startIndex + itemsPerPage);
+  const paginatedDevices = sortedDevices.slice(startIndex, startIndex + itemsPerPage);
 
   const getStatusBadge = (status: string, subStatus?: string) => {
     const variants: Record<string, string> = {
@@ -120,19 +187,40 @@ export default function DeviceListTable({ onDeviceSelect }: DeviceListTableProps
     );
   }
 
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <div className="text-center py-8">
+            <p className="text-destructive mb-2">Failed to load devices</p>
+            <p className="text-sm text-muted-foreground">Error: {error?.message || 'Unknown error'}</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <div className="p-6 border-b border-border">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-foreground">Device Status Overview</h3>
-          <div className="flex items-center space-x-3">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-foreground">Device Status Overview</h3>
+            <div className="text-sm text-muted-foreground">
+              {filteredDevices.length} of {devices.length} devices
+            </div>
+          </div>
+          
+          {/* Advanced Filter Row */}
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Search Input */}
             <div className="relative">
               <Input
                 type="text"
-                placeholder="Search devices..."
+                placeholder="Search devices, locations, types..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 w-64"
+                className="pl-10 w-80"
                 data-testid="input-search-devices"
               />
               <svg className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -140,9 +228,53 @@ export default function DeviceListTable({ onDeviceSelect }: DeviceListTableProps
               </svg>
             </div>
             
+            {/* Region Filter */}
+            <Select value={regionFilter} onValueChange={setRegionFilter}>
+              <SelectTrigger className="w-40" data-testid="select-region-filter">
+                <SelectValue placeholder="All Regions" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Regions</SelectItem>
+                {regionOptions.map(region => (
+                  <SelectItem key={region} value={region}>{region}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            {/* Device Type Filter */}
+            <Select value={deviceTypeFilter} onValueChange={setDeviceTypeFilter}>
+              <SelectTrigger className="w-44" data-testid="select-type-filter">
+                <SelectValue placeholder="All Types" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                {deviceTypeOptions.map(type => (
+                  <SelectItem key={type} value={type}>
+                    {type.replace('_', ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            {/* Health Status Filter */}
+            <Select value={healthFilter} onValueChange={setHealthFilter}>
+              <SelectTrigger className="w-40" data-testid="select-health-filter">
+                <SelectValue placeholder="All Health" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Health</SelectItem>
+                {healthOptions.map(health => (
+                  <SelectItem key={health} value={health}>
+                    {health.charAt(0).toUpperCase() + health.slice(1).toLowerCase()}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            {/* Status Filter */}
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-40" data-testid="select-status-filter">
-                <SelectValue placeholder="Filter by status" />
+                <SelectValue placeholder="All Status" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
@@ -152,6 +284,53 @@ export default function DeviceListTable({ onDeviceSelect }: DeviceListTableProps
                 <SelectItem value="WARNING">Warning</SelectItem>
               </SelectContent>
             </Select>
+            
+            {/* Sort Options */}
+            <Select value={sortBy} onValueChange={(value) => setSortBy(value as typeof sortBy)}>
+              <SelectTrigger className="w-44" data-testid="select-sort">
+                <SelectValue placeholder="Sort by..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="id">Device ID</SelectItem>
+                <SelectItem value="location">Location</SelectItem>
+                <SelectItem value="type">Device Type</SelectItem>
+                <SelectItem value="status">Status</SelectItem>
+                <SelectItem value="lastUpdate">Last Update</SelectItem>
+                <SelectItem value="health">Health Score</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+              className="px-3"
+              data-testid="button-sort-order"
+            >
+              {sortOrder === 'asc' ? '↑' : '↓'}
+            </Button>
+            
+            {/* Clear Filters */}
+            {(searchTerm || regionFilter !== 'all' || deviceTypeFilter !== 'all' || 
+              healthFilter !== 'all' || statusFilter !== 'all' || sortBy !== 'id') && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSearchTerm('');
+                  setRegionFilter('all');
+                  setDeviceTypeFilter('all');
+                  setHealthFilter('all');
+                  setStatusFilter('all');
+                  setSortBy('id');
+                  setSortOrder('asc');
+                }}
+                className="text-muted-foreground hover:text-foreground"
+                data-testid="button-clear-filters"
+              >
+                Clear Filters
+              </Button>
+            )}
           </div>
         </div>
       </div>

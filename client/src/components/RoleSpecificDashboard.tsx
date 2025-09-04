@@ -7,6 +7,8 @@ import DeviceRegistrationTable from "./DeviceRegistrationTable";
 import AlertsPanel from "./AlertsPanel";
 import AIAssistantPanel from "./AIAssistantPanel";
 import WeatherPanel from "./WeatherPanel";
+import NotificationManagement from "./NotificationManagement";
+import VendorIntegrationManagement from "./VendorIntegrationManagement";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

@@ -159,17 +159,45 @@ export const aiChatSessions = pgTable("ai_chat_sessions", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Maintenance schedules
+export const maintenanceSchedules = pgTable("maintenance_schedules", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  deviceId: varchar("device_id").notNull().references(() => devices.id),
+  type: varchar("type").notNull(), // PREVENTIVE, CORRECTIVE, EMERGENCY
+  priority: varchar("priority").notNull().default('MEDIUM'), // LOW, MEDIUM, HIGH, CRITICAL
+  status: varchar("status").notNull().default('SCHEDULED'), // SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED, OVERDUE
+  title: varchar("title").notNull(),
+  description: text("description"),
+  scheduledDate: timestamp("scheduled_date").notNull(),
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+  estimatedDuration: integer("estimated_duration"), // in minutes
+  actualDuration: integer("actual_duration"), // in minutes
+  assignedTo: varchar("assigned_to").references(() => users.id),
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  completedBy: varchar("completed_by").references(() => users.id),
+  requiredParts: jsonb("required_parts").default('[]'),
+  notes: text("notes"),
+  attachments: jsonb("attachments").default('[]'),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   alerts: many(alerts),
   operations: many(deviceOperations),
   chatSessions: many(aiChatSessions),
+  assignedMaintenance: many(maintenanceSchedules, { relationName: "assignedTo" }),
+  createdMaintenance: many(maintenanceSchedules, { relationName: "createdBy" }),
+  completedMaintenance: many(maintenanceSchedules, { relationName: "completedBy" }),
 }));
 
 export const devicesRelations = relations(devices, ({ many }) => ({
   metrics: many(deviceMetrics),
   alerts: many(alerts),
   operations: many(deviceOperations),
+  maintenanceSchedules: many(maintenanceSchedules),
 }));
 
 export const alertsRelations = relations(alerts, ({ one }) => ({
@@ -212,6 +240,25 @@ export const aiChatSessionsRelations = relations(aiChatSessions, ({ one }) => ({
   }),
 }));
 
+export const maintenanceSchedulesRelations = relations(maintenanceSchedules, ({ one }) => ({
+  device: one(devices, {
+    fields: [maintenanceSchedules.deviceId],
+    references: [devices.id],
+  }),
+  assignedToUser: one(users, {
+    fields: [maintenanceSchedules.assignedTo],
+    references: [users.id],
+  }),
+  createdByUser: one(users, {
+    fields: [maintenanceSchedules.createdBy],
+    references: [users.id],
+  }),
+  completedByUser: one(users, {
+    fields: [maintenanceSchedules.completedBy],
+    references: [users.id],
+  }),
+}));
+
 // Schema types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -234,6 +281,9 @@ export type WeatherData = typeof weatherData.$inferSelect;
 export type InsertAiChatSession = typeof aiChatSessions.$inferInsert;
 export type AiChatSession = typeof aiChatSessions.$inferSelect;
 
+export type InsertMaintenanceSchedule = typeof maintenanceSchedules.$inferInsert;
+export type MaintenanceSchedule = typeof maintenanceSchedules.$inferSelect;
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertDeviceSchema = createInsertSchema(devices);
@@ -241,6 +291,7 @@ export const insertAlertSchema = createInsertSchema(alerts);
 export const insertDeviceOperationSchema = createInsertSchema(deviceOperations);
 export const insertWeatherDataSchema = createInsertSchema(weatherData);
 export const insertAiChatSessionSchema = createInsertSchema(aiChatSessions);
+export const insertMaintenanceScheduleSchema = createInsertSchema(maintenanceSchedules);
 
 // Login schema
 export const loginSchema = z.object({

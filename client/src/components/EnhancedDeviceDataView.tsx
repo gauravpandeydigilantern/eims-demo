@@ -71,10 +71,13 @@ export default function EnhancedDeviceDataView() {
 
   const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
 
-  const { data: devices, isLoading, refetch, error } = useQuery<Device[]>({
+  const { data: devicesResponse, isLoading, refetch, error } = useQuery<{success: boolean, data: Device[]}>({
     queryKey: ["/api/devices"],
     refetchInterval: 30 * 1000,
   });
+
+  // Extract devices array from response
+  const devices = devicesResponse?.data || [];
 
   const { data: deviceMetrics } = useQuery<DeviceMetrics[]>({
     queryKey: ["/api/device-metrics"],

@@ -22,10 +22,13 @@ export default function DeviceRegistrationTable() {
     refetchInterval: 60 * 1000,
   });
 
-  const { data: devices } = useQuery<Array<any>>({
+  const { data: devicesResponse } = useQuery<{success: boolean, data: any[]}>({
     queryKey: ["/api/devices"],
     refetchInterval: 30 * 1000,
   });
+
+  // Extract devices array from response
+  const devices = devicesResponse?.data || [];
 
   // Generate registration data based on real devices
   const mockRegistrationData: DeviceRegistration[] = (devices || []).slice(0, 10).map((device, index) => {

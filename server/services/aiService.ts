@@ -2,6 +2,15 @@ import OpenAI from "openai";
 import { storage } from "../storage";
 import type { AiChatSession } from "@shared/schema";
 
+// Simple alertService mock for now
+const alertService = {
+  getAlertsSummary: async () => ({ 
+    total: 0, 
+    unread: 0, 
+    critical: 0 
+  })
+};
+
 // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
 const openai = new OpenAI({ 
   apiKey: process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY_ENV_VAR || "default_key"
@@ -138,7 +147,7 @@ Be helpful, concise, and provide actionable insights. Include relevant device ID
     const onlineDevices = devices.filter(d => d.status === 'LIVE').length;
     const offlineDevices = devices.filter(d => d.status === 'DOWN').length;
 
-    const context = {
+    const context: any = {
       totalDevices: devices.length,
       onlineDevices,
       offlineDevices,
@@ -151,7 +160,7 @@ Be helpful, concise, and provide actionable insights. Include relevant device ID
     }
 
     if (query.toLowerCase().includes('mumbai') || query.toLowerCase().includes('mum')) {
-      context.mumbaiDevices = devices.filter(d => d.region.toLowerCase().includes('mumbai'));
+      context.mumbaiDevices = devices.filter(d => d.region?.toLowerCase().includes('mumbai'));
     }
 
     return context;

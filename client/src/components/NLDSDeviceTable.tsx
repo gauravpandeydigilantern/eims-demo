@@ -25,10 +25,13 @@ export default function NLDSDeviceTable() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   
-  const { data: devices, isLoading } = useQuery<Device[]>({
+  const { data: devicesResponse, isLoading } = useQuery<{success: boolean, data: Device[]}>({
     queryKey: ["/api/devices"],
     refetchInterval: 30 * 1000,
   });
+
+  // Extract devices array from response
+  const devices = devicesResponse?.data || [];
 
   if (isLoading) {
     return (

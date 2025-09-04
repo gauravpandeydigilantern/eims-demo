@@ -11,6 +11,14 @@ import { aiService } from "./services/aiService";
 import { weatherService } from "./services/weatherService";
 import { insertDeviceOperationSchema, insertAlertSchema } from "@shared/schema";
 
+// Import new route modules
+import devicesRouter from "./routes/devices.js";
+import alertsRouter from "./routes/alerts.js";
+import maintenanceRouter from "./routes/maintenance.js";
+import usersRouter from "./routes/users.js";
+import notificationsRouter from "./routes/notifications.js";
+import vendorIntegrationRouter from "./routes/vendor-integration.js";
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
@@ -36,8 +44,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       req.logIn(user, (err) => {
         if (err) {
+          console.error('Login session error:', err);
           return res.status(500).json({ message: "Login failed" });
         }
+        
+        console.log('Login successful - session ID:', req.sessionID);
+        console.log('Login successful - user ID:', user.id);
+        
         res.json({ message: "Login successful", user: {
           id: user.id,
           email: user.email,
@@ -72,6 +85,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
+      console.log('Auth check - isAuthenticated:', req.isAuthenticated());
+      console.log('Auth check - user:', req.user ? 'User exists' : 'No user');
+      console.log('Auth check - session ID:', req.sessionID);
+      
       const user = req.user as User;
       res.json({
         id: user.id,
@@ -88,7 +105,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Device routes
+  // Register modular API routes
+  app.use('/api/devices', devicesRouter);
+  app.use('/api/alerts', alertsRouter);
+  app.use('/api/maintenance', maintenanceRouter);
+  app.use('/api/users', usersRouter);
+  app.use('/api/notifications', notificationsRouter);
+  app.use('/api/vendor-integration', vendorIntegrationRouter);
+
+  // Device routes (legacy - will be replaced by modular routes)
   app.get('/api/devices', isAuthenticated, hasRegionalAccess, async (req: any, res) => {
     try {
       const user = req.user as User;

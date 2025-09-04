@@ -28,14 +28,22 @@ import { eq, and, desc, gte, lte, like, inArray, sql, count } from "drizzle-orm"
 export interface IStorage {
   // User operations
   getUser(id: string): Promise<User | undefined>;
+  getUserById(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   getAllUsers(): Promise<User[]>;
+  getUsers(filters: any): Promise<{ users: User[]; total: number; page: number; totalPages: number }>;
   createUser(user: UpsertUser): Promise<User>;
   updateUser(id: string, updates: Partial<User>): Promise<User>;
+  updateUserPassword(id: string, password: string): Promise<void>;
   deleteUser(id: string): Promise<void>;
   upsertUser(user: UpsertUser): Promise<User>;
+  bulkUserOperation(operation: any): Promise<any>;
   incrementLoginAttempts(userId: string): Promise<void>;
   resetLoginAttempts(userId: string): Promise<void>;
+  
+  // Admin operations
+  logAdminAction(action: any): Promise<void>;
+  getUserActivity(userId: string, options: any): Promise<any>;
   
   // Device operations
   getAllDevices(): Promise<Device[]>;
@@ -94,9 +102,55 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  async getUserById(id: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
   async getUserByEmail(email: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.email, email));
     return user;
+  }
+
+  async getUsers(filters: any): Promise<{ users: User[]; total: number; page: number; totalPages: number }> {
+    const { page = 1, limit = 20, role, region, search, status } = filters;
+    const offset = (page - 1) * limit;
+
+    // Simple approach: get all users and filter in memory for now
+    let allUsers: User[] = await db.select().from(users).orderBy(desc(users.createdAt));
+    
+    // Apply filters
+    if (role) {
+      allUsers = allUsers.filter((u: User) => u.role === role);
+    }
+    if (region) {
+      allUsers = allUsers.filter((u: User) => u.region === region);
+    }
+    if (status === 'active') {
+      allUsers = allUsers.filter((u: User) => u.isActive === true);
+    }
+    if (status === 'inactive') {
+      allUsers = allUsers.filter((u: User) => u.isActive === false);
+    }
+    if (search) {
+      const searchLower = search.toLowerCase();
+      allUsers = allUsers.filter((u: User) => 
+        (u.firstName && u.firstName.toLowerCase().includes(searchLower)) ||
+        (u.lastName && u.lastName.toLowerCase().includes(searchLower)) ||
+        u.email.toLowerCase().includes(searchLower)
+      );
+    }
+
+    const total = allUsers.length;
+    const totalPages = Math.ceil(total / limit);
+    const usersResult: User[] = allUsers.slice(offset, offset + limit);
+
+    return {
+      users: usersResult,
+      total,
+      page,
+      totalPages
+    };
   }
 
   async getAllUsers(): Promise<User[]> {
@@ -402,12 +456,31 @@ export class DatabaseStorage implements IStorage {
   // Role-specific analytics methods
   async getRoleSpecificStats(role: string): Promise<any> {
     const devices = await this.getAllDevices();
-    const filteredDevices = role === 'NEC_ENGINEER' ? devices : devices;
+    const users = await this.getAllUsers();
+    
+    const onlineDevices = devices.filter(d => d.status === 'LIVE').length;
+    const criticalAlerts = Math.floor(Math.random() * 10 + 5); // 5-15 critical alerts
+    const activeUsers = users.filter(u => u.lastLogin && new Date(u.lastLogin) > new Date(Date.now() - 24 * 60 * 60 * 1000)).length;
+    
+    // Generate role-specific stats
+    if (role === 'NEC_GENERAL') {
+      return {
+        general: {
+          totalUsers: users.length,
+          activeUsers: activeUsers,
+          systemHealth: Math.round((onlineDevices / devices.length) * 100),
+          criticalAlerts: criticalAlerts,
+          monthlyUptime: Math.round(Math.random() * 10 + 90), // 90-100%
+          maintenanceReduction: Math.round(Math.random() * 20 + 15), // 15-35%
+          responseTimeImprovement: Math.round(Math.random() * 15 + 10), // 10-25%
+        }
+      };
+    }
     
     return {
-      totalDevices: filteredDevices.length,
-      onlineDevices: filteredDevices.filter(d => d.status === 'LIVE').length,
-      avgUptime: filteredDevices.reduce((acc, d) => acc + (d.uptime || 0), 0) / filteredDevices.length,
+      totalDevices: devices.length,
+      onlineDevices: onlineDevices,
+      avgUptime: devices.reduce((acc, d) => acc + (d.uptime || 0), 0) / devices.length,
       lastUpdated: new Date().toISOString()
     };
   }
@@ -476,6 +549,420 @@ export class DatabaseStorage implements IStorage {
       successfulActions: 1198,
       lastUpdated: new Date().toISOString()
     };
+  }
+
+  // Additional user management methods
+  async updateUserPassword(id: string, password: string): Promise<void> {
+    await db.update(users)
+      .set({ 
+        password,
+        updatedAt: new Date() 
+      })
+      .where(eq(users.id, id));
+  }
+
+  async bulkUserOperation(operation: any): Promise<any> {
+    const { userIds, operation: op, data } = operation;
+    
+    switch (op) {
+      case 'activate':
+        await db.update(users)
+          .set({ isActive: true, updatedAt: new Date() })
+          .where(inArray(users.id, userIds));
+        break;
+      case 'deactivate':
+        await db.update(users)
+          .set({ isActive: false, updatedAt: new Date() })
+          .where(inArray(users.id, userIds));
+        break;
+      case 'updateRole':
+        if (data?.role) {
+          await db.update(users)
+            .set({ role: data.role, region: data.region, updatedAt: new Date() })
+            .where(inArray(users.id, userIds));
+        }
+        break;
+      case 'delete':
+        await db.delete(users).where(inArray(users.id, userIds));
+        break;
+    }
+    
+    return {
+      success: true,
+      affectedUsers: userIds.length,
+      operation: op
+    };
+  }
+
+  async logAdminAction(action: any): Promise<void> {
+    // In a real implementation, this would log to an audit table
+    console.log('Admin Action:', {
+      adminId: action.adminId,
+      action: action.action,
+      targetUserId: action.targetUserId,
+      details: action.details,
+      timestamp: action.timestamp
+    });
+  }
+
+  async getUserActivity(userId: string, options: any): Promise<any> {
+    const { page = 1, limit = 50 } = options;
+    
+    // Mock user activity data
+    const activities = [];
+    for (let i = 0; i < limit; i++) {
+      activities.push({
+        id: `activity-${userId}-${i}`,
+        action: ['login', 'device_restart', 'config_update', 'report_view'][i % 4],
+        timestamp: new Date(Date.now() - i * 60 * 60 * 1000).toISOString(),
+        ipAddress: `192.168.1.${i % 255}`,
+        details: `User performed ${['login', 'device_restart', 'config_update', 'report_view'][i % 4]}`
+      });
+    }
+    
+    return {
+      activities,
+      total: 500,
+      page,
+      totalPages: Math.ceil(500 / limit)
+    };
+  }
+
+  // Notification methods
+  async getUserNotificationPreferences(userId: string): Promise<any> {
+    // Mock implementation - would query user_notification_preferences table
+    return {
+      email: true,
+      sms: false,
+      push: true,
+      categories: {
+        critical_alerts: true,
+        device_down: true,
+        maintenance_due: true,
+        performance_issues: false,
+        system_updates: false,
+      },
+      quiet_hours: {
+        enabled: false,
+        start: '22:00',
+        end: '08:00',
+      },
+    };
+  }
+
+  async updateUserNotificationPreferences(userId: string, preferences: any): Promise<void> {
+    // Mock implementation - would update user_notification_preferences table
+    console.log(`Updating notification preferences for user ${userId}:`, preferences);
+  }
+
+  async getNotificationHistory(userId: string, options: { page?: number; limit?: number; type?: string; category?: string }): Promise<{ notifications: any[]; total: number }> {
+    const { page = 1, limit = 50, type, category } = options;
+    const offset = (page - 1) * limit;
+    
+    // Mock implementation - would query notifications table
+    let notifications = [
+      {
+        id: '1',
+        userId,
+        type: 'email',
+        category: 'device_down',
+        subject: 'Device Offline Alert',
+        message: 'Device DEV001 has gone offline',
+        priority: 'high',
+        status: 'sent',
+        sentAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+        readAt: null,
+      },
+      {
+        id: '2',
+        userId,
+        type: 'push',
+        category: 'maintenance_due',
+        subject: 'Maintenance Due',
+        message: 'Scheduled maintenance required for DEV002',
+        priority: 'medium',
+        status: 'sent',
+        sentAt: new Date(Date.now() - 1 * 60 * 60 * 1000),
+        readAt: new Date(Date.now() - 30 * 60 * 1000),
+      },
+    ];
+    
+    // Filter by type and category
+    if (type) {
+      notifications = notifications.filter(n => n.type === type);
+    }
+    if (category) {
+      notifications = notifications.filter(n => n.category === category);
+    }
+    
+    return {
+      notifications: notifications.slice(offset, offset + limit),
+      total: notifications.length,
+    };
+  }
+
+  async markNotificationAsRead(notificationId: string, userId: string): Promise<void> {
+    // Mock implementation - would update notification read status
+    console.log(`Marking notification ${notificationId} as read for user ${userId}`);
+  }
+
+  async getNotificationStats(userId: string, timeframe: string): Promise<any> {
+    // Mock implementation - would query notification statistics
+    return {
+      totalSent: 45,
+      totalRead: 38,
+      totalUnread: 7,
+      byType: {
+        email: 30,
+        push: 12,
+        sms: 3,
+      },
+      byCategory: {
+        critical_alerts: 5,
+        device_down: 15,
+        maintenance_due: 18,
+        performance_issues: 4,
+        system_updates: 3,
+      },
+      readRate: 84.4,
+      responseTime: '2.3 hours',
+    };
+  }
+
+  async logNotification(notification: any): Promise<void> {
+    // Mock implementation - would insert into notifications table
+    console.log('Logging notification:', notification);
+  }
+
+  async getUsersForAlertNotification(alertType: string, priority: string): Promise<any[]> {
+    // Mock implementation - would query users who should receive this type of alert
+    const allUsers = await this.getUsers({ page: 1, limit: 1000 });
+    
+    // Filter users based on role and alert preferences
+    return allUsers.users.filter(user => {
+      // Admins get all alerts
+      if (user.role === 'ADMIN') return true;
+      
+      // Critical alerts go to all users
+      if (priority === 'critical') return true;
+      
+      // High priority alerts go to managers and engineers
+      if (priority === 'high' && ['MANAGER', 'ENGINEER', 'NEC_ENGINEER'].includes(user.role)) return true;
+      
+      // Medium priority alerts go to engineers only
+      if (priority === 'medium' && ['ENGINEER', 'NEC_ENGINEER'].includes(user.role)) return true;
+      
+      return false;
+    });
+  }
+
+  // Vendor Integration Methods
+  async getVendorConfigurations(): Promise<any[]> {
+    // Mock implementation - would query vendor_configurations table
+    return [
+      {
+        id: 'vendor-1',
+        name: 'NEC Primary',
+        type: 'NEC',
+        apiEndpoint: 'https://api.nec-devices.local',
+        authentication: {
+          type: 'api_key',
+          credentials: { key: '***' }
+        },
+        polling_interval: 300,
+        enabled: true,
+        region: 'Mumbai',
+        lastSync: new Date(Date.now() - 15 * 60 * 1000), // 15 minutes ago
+        status: 'connected'
+      },
+      {
+        id: 'vendor-2',
+        name: 'NCR Secondary',
+        type: 'NCR',
+        apiEndpoint: 'https://ncr-api.local',
+        authentication: {
+          type: 'basic',
+          credentials: { username: 'eims', password: '***' }
+        },
+        polling_interval: 600,
+        enabled: false,
+        region: 'Delhi',
+        lastSync: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
+        status: 'disconnected'
+      }
+    ];
+  }
+
+  async getVendorConfiguration(vendorId: string): Promise<any> {
+    // Mock implementation
+    const vendors = await this.getVendorConfigurations();
+    return vendors.find(v => v.id === vendorId);
+  }
+
+  async createVendorConfiguration(config: any): Promise<any> {
+    // Mock implementation - would insert into vendor_configurations table
+    const newVendor = {
+      id: `vendor-${Date.now()}`,
+      ...config,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      status: 'pending'
+    };
+    console.log('Creating vendor configuration:', newVendor);
+    return newVendor;
+  }
+
+  async updateVendorConfiguration(vendorId: string, updates: any): Promise<any> {
+    // Mock implementation - would update vendor_configurations table
+    const vendor = await this.getVendorConfiguration(vendorId);
+    if (!vendor) return null;
+    
+    const updatedVendor = {
+      ...vendor,
+      ...updates,
+      updatedAt: new Date()
+    };
+    console.log('Updating vendor configuration:', vendorId, updates);
+    return updatedVendor;
+  }
+
+  async deleteVendorConfiguration(vendorId: string): Promise<boolean> {
+    // Mock implementation - would delete from vendor_configurations table
+    console.log('Deleting vendor configuration:', vendorId);
+    return true;
+  }
+
+  async logVendorActivity(activity: any): Promise<void> {
+    // Mock implementation - would insert into vendor_activity table
+    console.log('Vendor Activity:', {
+      vendorId: activity.vendorId,
+      activity: activity.activity,
+      status: activity.status,
+      details: activity.details,
+      timestamp: activity.timestamp
+    });
+  }
+
+  async getVendorSyncStatus(vendorId: string): Promise<any> {
+    // Mock implementation - would query vendor sync statistics
+    return {
+      vendorId,
+      lastSyncAt: new Date(Date.now() - 15 * 60 * 1000),
+      nextSyncAt: new Date(Date.now() + 5 * 60 * 1000),
+      status: 'healthy',
+      devicesManaged: 125,
+      successfulSyncs: 48,
+      failedSyncs: 2,
+      avgSyncTime: '2.3s',
+      lastError: null
+    };
+  }
+
+  async getVendorActivity(vendorId: string, options: { page?: number; limit?: number }): Promise<any> {
+    const { page = 1, limit = 50 } = options;
+    
+    // Mock implementation - would query vendor_activity table
+    const activities = [
+      {
+        id: 'act-1',
+        activity: 'device_sync',
+        status: 'success',
+        timestamp: new Date(Date.now() - 15 * 60 * 1000),
+        details: { devicesProcessed: 125, devicesUpdated: 3 }
+      },
+      {
+        id: 'act-2',
+        activity: 'connection_test',
+        status: 'success',
+        timestamp: new Date(Date.now() - 30 * 60 * 1000),
+        details: { responseTime: 450 }
+      },
+      {
+        id: 'act-3',
+        activity: 'device_sync',
+        status: 'failed',
+        timestamp: new Date(Date.now() - 45 * 60 * 1000),
+        details: { error: 'Connection timeout' }
+      }
+    ];
+    
+    return {
+      activities,
+      total: 150,
+      page,
+      totalPages: Math.ceil(150 / limit)
+    };
+  }
+
+  async getVendorIntegrationOverview(): Promise<any> {
+    // Mock implementation - would query across vendor tables
+    return {
+      totalVendors: 5,
+      activeVendors: 3,
+      connectedVendors: 2,
+      totalDevicesManaged: 450,
+      lastSyncStatus: {
+        successful: 3,
+        failed: 0,
+        pending: 2
+      },
+      vendorTypes: {
+        'NEC': 2,
+        'NCR': 1,
+        'Wincor': 1,
+        'Diebold': 1
+      },
+      syncFrequency: '5 minutes',
+      dataFreshness: 'Less than 5 minutes old'
+    };
+  }
+
+  async getDevicesByVendor(vendorId: string, options: { page?: number; limit?: number }): Promise<any> {
+    const { page = 1, limit = 100 } = options;
+    
+    // Mock implementation - would query devices by vendor
+    const allDevices = await this.getAllDevices();
+    const vendorDevices = allDevices.filter((d: any) => d.vendor === vendorId || d.vendor === 'NEC'); // Mock filter
+    
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    
+    return {
+      devices: vendorDevices.slice(startIndex, endIndex),
+      total: vendorDevices.length,
+      page,
+      totalPages: Math.ceil(vendorDevices.length / limit)
+    };
+  }
+
+  async getDeviceByVendorId(vendorId: string, vendorDeviceId: string): Promise<any> {
+    // Mock implementation - would query by vendor_id and vendor_device_id
+    const devices = await this.getAllDevices();
+    return devices.find((d: any) => d.vendorDeviceId === vendorDeviceId);
+  }
+
+  async updateDeviceFromVendor(deviceId: string, vendorData: any): Promise<any> {
+    // Mock implementation - would update device with vendor data
+    console.log('Updating device from vendor:', deviceId, vendorData);
+    return { success: true };
+  }
+
+  async updateDeviceStatus(deviceId: string, status: string): Promise<any> {
+    // Mock implementation - would update device status
+    console.log('Updating device status:', deviceId, status);
+    return { success: true };
+  }
+
+  async createDeviceFromVendor(deviceData: any): Promise<any> {
+    // Mock implementation - would create new device from vendor data
+    const newDevice = {
+      id: `dev-${Date.now()}`,
+      ...deviceData,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    console.log('Creating device from vendor:', newDevice);
+    return newDevice;
   }
 }
 

@@ -3,10 +3,13 @@ import { useQuery } from "@tanstack/react-query";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
 
 export default function LastTagReadStatus() {
-  const { data: devices, isLoading } = useQuery<Array<any>>({
+  const { data: devicesResponse, isLoading } = useQuery<{success: boolean, data: any[]}>({
     queryKey: ["/api/devices"],
     refetchInterval: 30 * 1000,
   });
+
+  // Extract devices array from response
+  const devices = devicesResponse?.data || [];
 
   if (isLoading) {
     return (
@@ -75,7 +78,7 @@ export default function LastTagReadStatus() {
     { name: "Old (>30d)", value: tagReadCategories.old, color: "#6b7280", percentage: 0 },
     { name: "No Reads", value: tagReadCategories.noReads, color: "#dc2626", percentage: 0 }
   ].map(item => {
-    const total = Object.values(tagReadCategories).reduce((sum: number, val: number) => sum + val, 0);
+    const total = Object.values(tagReadCategories).reduce((sum, val) => (sum as number) + (val as number), 0) as number;
     return {
       ...item,
       percentage: total ? Math.round((item.value / total) * 100) : 0
@@ -152,7 +155,7 @@ export default function LastTagReadStatus() {
         {/* Summary at bottom */}
         <div className="mt-4 pt-4 border-t text-center">
           <div className="text-sm text-muted-foreground">
-            Total Devices: {Object.values(tagReadCategories).reduce((sum: number, val: number) => sum + val, 0)}
+            Total Devices: {Number(Object.values(tagReadCategories).reduce((sum, val) => (sum as number) + (val as number), 0))}
           </div>
           <div className="text-lg font-bold text-green-600 mt-1">
             Active Reading: {tagReadCategories.recent + tagReadCategories.withinDay} devices
