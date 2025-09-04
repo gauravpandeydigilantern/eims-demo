@@ -22,14 +22,15 @@ export default function DeviceDetail() {
   
   const deviceId = params?.deviceId;
 
-  const { data: deviceData, isLoading, error } = useQuery<{device: any; metrics: any; recentAlerts: any[]}>({
+  const { data: deviceResponse, isLoading, error } = useQuery<{success: boolean; data: any}>({
     queryKey: [`/api/devices/${deviceId}`],
     enabled: !!deviceId,
   });
 
-  const device = deviceData?.device;
+  const deviceData = deviceResponse?.data;
+  const device = deviceData;
   const metrics = deviceData?.metrics;
-  const recentAlerts = deviceData?.recentAlerts || [];
+  const recentAlerts = deviceData?.alerts || [];
 
   if (isLoading) {
     return (

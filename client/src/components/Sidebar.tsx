@@ -2,17 +2,18 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
   isMobile: boolean;
   activeTab?: string;
-  onTabChange?: (tab: string) => void;
 }
 
-export default function Sidebar({ isOpen, onClose, isMobile, activeTab, onTabChange }: SidebarProps) {
+export default function Sidebar({ isOpen, onClose, isMobile, activeTab }: SidebarProps) {
   const { user } = useAuth();
+  const [, navigate] = useLocation();
   
   const { data: alertsSummary } = useQuery<{ total: number; critical: number; warning: number; info: number }>({
     queryKey: ["/api/alerts/summary"],
@@ -22,90 +23,21 @@ export default function Sidebar({ isOpen, onClose, isMobile, activeTab, onTabCha
   const canAccessUserManagement = user?.role === 'NEC_GENERAL' || user?.role === 'NEC_ADMIN';
   const canAccessAnalytics = user?.role !== 'CLIENT';
 
-  // Map sidebar navigation to tab values based on user role
-  const getSidebarToTabMap = (): Record<string, string> => {
-    if (user?.role === 'NEC_GENERAL') {
-      return {
-        'overview': 'overview',
-        'data': 'data',
-        'project-analytics': 'project-analytics',
-        'performance': 'performance',
-        'alerts': 'alerts',
-        'analytics': 'analytics',
-        'reports': 'reports',
-        'ai-assistant': 'operations',
-        'user-management': 'operations',
-        'activity': 'activity',
-        'settings': 'operations'
-      };
-    } else if (user?.role === 'NEC_ENGINEER') {
-      return {
-        'overview': 'monitoring',
-        'data': 'devices',
-        'alerts': 'monitoring', 
-        'analytics': 'analytics',
-        'reports': 'reports',
-        'ai-assistant': 'maintenance',
-        'user-management': 'monitoring',
-        'settings': 'maintenance'
-      };
-    } else if (user?.role === 'NEC_ADMIN') {
-      return {
-        'overview': 'overview',        // Dashboard → Overview (main dashboard)
-        'data': 'devices',             // Data View → Device Management 
-        'alerts': 'alerts',            // Alerts → Alerts (dedicated alerts tab)
-        'analytics': 'analytics',      // Analytics → Analytics
-        'reports': 'reports',          // Reports → Reports (dedicated reports tab)
-        'ai-assistant': 'configuration',  // AI Assistant → Configuration 
-        'user-management': 'users',    // User Management → Users
-        'notifications': 'notifications', // Notifications → Notifications
-        'vendor-integration': 'vendor-integration', // Vendor Integration → Vendor Integration
-        'activity': 'logs',            // Activity → System Logs
-        'settings': 'configuration'    // Settings → Configuration
-      };
-    } else { // CLIENT
-      return {
-        'overview': 'overview',
-        'data': 'overview',
-        'alerts': 'overview',
-        'analytics': 'analytics',
-        'reports': 'reports',
-        'ai-assistant': 'service',
-        'user-management': 'overview',
-        'settings': 'service'
-      };
-    }
-  };
-
-  const handleLinkClick = (sidebarTab?: string) => {
+  const handleLinkClick = (route: string) => {
     return () => {
-      // Route certain items to standalone pages
-      if (sidebarTab === 'ai-assistant') {
-        window.history.pushState({}, '', '/ai-assistant');
-        window.dispatchEvent(new PopStateEvent('popstate'));
-      } else if (sidebarTab === 'user-management') {
-        window.history.pushState({}, '', '/users');
-        window.dispatchEvent(new PopStateEvent('popstate'));
-      } else if (sidebarTab === 'settings') {
-        window.history.pushState({}, '', '/settings');
-        window.dispatchEvent(new PopStateEvent('popstate'));
-      } else if (sidebarTab && onTabChange) {
-        const sidebarToTabMap = getSidebarToTabMap();
-        const tabValue = sidebarToTabMap[sidebarTab] || sidebarTab;
-        onTabChange(tabValue);
-      }
+      navigate(route);
       if (isMobile) {
         onClose();
       }
     };
   };
 
-  // Function to check if a sidebar item should be active
-  const isSidebarItemActive = (sidebarTab: string): boolean => {
-    if (!activeTab) return false;
-    const sidebarToTabMap = getSidebarToTabMap();
-    const mappedTab = sidebarToTabMap[sidebarTab];
-    return activeTab === mappedTab;
+  // Function to check if a route should be active
+  const isRouteActive = (route: string): boolean => {
+    if (route === '/') {
+      return window.location.pathname === '/';
+    }
+    return window.location.pathname === route;
   };
 
   return (
@@ -130,11 +62,11 @@ export default function Sidebar({ isOpen, onClose, isMobile, activeTab, onTabCha
           <nav className="space-y-2">
             <button 
               className={`flex items-center space-x-3 rounded-lg px-3 py-2 font-medium w-full text-left transition-colors ${
-                isSidebarItemActive('overview') 
+                isRouteActive('/') 
                   ? 'text-foreground bg-primary/10' 
                   : 'text-muted-foreground hover:text-foreground hover:bg-accent'
               }`}
-              onClick={handleLinkClick('overview')}
+              onClick={handleLinkClick('/')}
               data-testid="link-dashboard"
             >
               <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -146,11 +78,11 @@ export default function Sidebar({ isOpen, onClose, isMobile, activeTab, onTabCha
 
             <button 
               className={`flex items-center space-x-3 rounded-lg px-3 py-2 font-medium w-full text-left transition-colors ${
-                isSidebarItemActive('data') 
+                isRouteActive('/data') 
                   ? 'text-foreground bg-primary/10' 
                   : 'text-muted-foreground hover:text-foreground hover:bg-accent'
               }`}
-              onClick={handleLinkClick('data')}
+              onClick={handleLinkClick('/data')}
               data-testid="link-data-view"
             >
               <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -162,11 +94,11 @@ export default function Sidebar({ isOpen, onClose, isMobile, activeTab, onTabCha
             
             <button 
               className={`flex items-center justify-between rounded-lg px-3 py-2 w-full text-left transition-colors ${
-                isSidebarItemActive('alerts') 
+                isRouteActive('/alerts') 
                   ? 'text-foreground bg-primary/10' 
                   : 'text-muted-foreground hover:text-foreground hover:bg-accent'
               }`}
-              onClick={handleLinkClick('alerts')}
+              onClick={handleLinkClick('/alerts')}
               data-testid="link-alerts"
             >
               <div className="flex items-center space-x-3">
@@ -189,11 +121,11 @@ export default function Sidebar({ isOpen, onClose, isMobile, activeTab, onTabCha
             {canAccessAnalytics && (
               <button 
                 className={`flex items-center space-x-3 rounded-lg px-3 py-2 w-full text-left transition-colors ${
-                  isSidebarItemActive('analytics') 
+                  isRouteActive('/analytics') 
                     ? 'text-foreground bg-primary/10' 
                     : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                 }`}
-                onClick={handleLinkClick('analytics')}
+                onClick={handleLinkClick('/analytics')}
                 data-testid="link-analytics"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -205,11 +137,11 @@ export default function Sidebar({ isOpen, onClose, isMobile, activeTab, onTabCha
             
             <button 
               className={`flex items-center space-x-3 rounded-lg px-3 py-2 w-full text-left transition-colors ${
-                isSidebarItemActive('reports') 
+                isRouteActive('/reports') 
                   ? 'text-foreground bg-primary/10' 
                   : 'text-muted-foreground hover:text-foreground hover:bg-accent'
               }`}
-              onClick={handleLinkClick('reports')}
+              onClick={handleLinkClick('/reports')}
               data-testid="link-reports"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -220,11 +152,11 @@ export default function Sidebar({ isOpen, onClose, isMobile, activeTab, onTabCha
             
             <button 
               className={`flex items-center space-x-3 rounded-lg px-3 py-2 w-full text-left transition-colors ${
-                isSidebarItemActive('ai-assistant') 
+                isRouteActive('/ai-assistant') 
                   ? 'text-foreground bg-primary/10' 
                   : 'text-muted-foreground hover:text-foreground hover:bg-accent'
               }`}
-              onClick={handleLinkClick('ai-assistant')}
+              onClick={handleLinkClick('/ai-assistant')}
               data-testid="link-ai-assistant"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -236,11 +168,11 @@ export default function Sidebar({ isOpen, onClose, isMobile, activeTab, onTabCha
             {canAccessUserManagement && (
               <button 
                 className={`flex items-center space-x-3 rounded-lg px-3 py-2 w-full text-left transition-colors ${
-                  isSidebarItemActive('user-management') 
+                  isRouteActive('/users') 
                     ? 'text-foreground bg-primary/10' 
                     : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                 }`}
-                onClick={handleLinkClick('user-management')}
+                onClick={handleLinkClick('/users')}
                 data-testid="link-user-management"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -254,11 +186,11 @@ export default function Sidebar({ isOpen, onClose, isMobile, activeTab, onTabCha
             {user?.role === 'NEC_ADMIN' && (
               <button 
                 className={`flex items-center space-x-3 rounded-lg px-3 py-2 w-full text-left transition-colors ${
-                  isSidebarItemActive('notifications') 
+                  isRouteActive('/notifications') 
                     ? 'text-foreground bg-primary/10' 
                     : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                 }`}
-                onClick={handleLinkClick('notifications')}
+                onClick={handleLinkClick('/notifications')}
                 data-testid="link-notifications"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -272,11 +204,11 @@ export default function Sidebar({ isOpen, onClose, isMobile, activeTab, onTabCha
             {user?.role === 'NEC_ADMIN' && (
               <button 
                 className={`flex items-center space-x-3 rounded-lg px-3 py-2 w-full text-left transition-colors ${
-                  isSidebarItemActive('vendor-integration') 
+                  isRouteActive('/vendor-integration') 
                     ? 'text-foreground bg-primary/10' 
                     : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                 }`}
-                onClick={handleLinkClick('vendor-integration')}
+                onClick={handleLinkClick('/vendor-integration')}
                 data-testid="link-vendor-integration"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -288,11 +220,11 @@ export default function Sidebar({ isOpen, onClose, isMobile, activeTab, onTabCha
             
             <button 
               className={`flex items-center space-x-3 rounded-lg px-3 py-2 w-full text-left transition-colors ${
-                isSidebarItemActive('settings') 
+                isRouteActive('/settings') 
                   ? 'text-foreground bg-primary/10' 
                   : 'text-muted-foreground hover:text-foreground hover:bg-accent'
               }`}
-              onClick={handleLinkClick('settings')}
+              onClick={handleLinkClick('/settings')}
               data-testid="link-settings"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

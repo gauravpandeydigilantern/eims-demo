@@ -105,7 +105,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Register modular API routes
+    // Register modular API routes
   app.use('/api/devices', devicesRouter);
   app.use('/api/alerts', alertsRouter);
   app.use('/api/maintenance', maintenanceRouter);
@@ -113,23 +113,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/notifications', notificationsRouter);
   app.use('/api/vendor-integration', vendorIntegrationRouter);
 
-  // Device routes (legacy - will be replaced by modular routes)
-  app.get('/api/devices', isAuthenticated, hasRegionalAccess, async (req: any, res) => {
-    try {
-      const user = req.user as User;
-      let devices = await storage.getAllDevices();
-      
-      // Apply regional restrictions for NEC_ENGINEER
-      if (user.role === 'NEC_ENGINEER' && user.region) {
-        devices = devices.filter(d => d.region === user.region);
-      }
-      
-      res.json(devices);
-    } catch (error) {
-      console.error("Error fetching devices:", error);
-      res.status(500).json({ message: "Failed to fetch devices" });
-    }
-  });
+  // Legacy device routes - removed to avoid conflicts with modular router
+  // app.get('/api/devices', ...) - handled by modular devicesRouter
+  // app.get('/api/devices/:id', ...) - handled by modular devicesRouter  
+  // app.get('/api/devices/stats', ...) - handled by modular devicesRouter
 
   app.get('/api/devices/stats', isAuthenticated, hasRegionalAccess, async (req: any, res) => {
     try {
