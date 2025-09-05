@@ -33,6 +33,11 @@ export default function WeatherPanel() {
     refetchInterval: 5 * 60 * 1000,
   });
 
+  const { data: weatherImpact } = useQuery({
+    queryKey: ["/api/weather-impact"],
+    refetchInterval: 5 * 60 * 1000,
+  });
+
   const getWeatherIcon = (condition: string) => {
     switch (condition?.toLowerCase()) {
       case 'sunny':
@@ -297,6 +302,48 @@ export default function WeatherPanel() {
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* Weather Impact Summary */}
+          {weatherImpact && typeof weatherImpact === 'object' && (
+            <div className="bg-amber-50 dark:bg-amber-950 rounded-lg p-4 border border-amber-200 dark:border-amber-800">
+              <h4 className="font-medium text-amber-800 dark:text-amber-200 mb-3 flex items-center">
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                System Impact Analysis
+              </h4>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="text-center">
+                  <div className="text-lg font-bold text-amber-700 dark:text-amber-300">
+                    {(weatherImpact as any)?.devicesAtRisk || 0}
+                  </div>
+                  <div className="text-xs text-amber-600 dark:text-amber-400">Devices at Risk</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-lg font-bold text-green-700 dark:text-green-300">
+                    {(weatherImpact as any)?.protectedDevices || 0}
+                  </div>
+                  <div className="text-xs text-amber-600 dark:text-amber-400">Protected</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-lg font-bold text-blue-700 dark:text-blue-300">
+                    {(weatherImpact as any)?.alertsGenerated || 0}
+                  </div>
+                  <div className="text-xs text-amber-600 dark:text-amber-400">Alerts Generated</div>
+                </div>
+                <div className="text-center">
+                  <div className={`text-lg font-bold ${
+                    (weatherImpact as any)?.riskLevel === 'HIGH' ? 'text-red-700 dark:text-red-300' :
+                    (weatherImpact as any)?.riskLevel === 'MEDIUM' ? 'text-orange-700 dark:text-orange-300' :
+                    'text-green-700 dark:text-green-300'
+                  }`}>
+                    {(weatherImpact as any)?.riskLevel || 'LOW'}
+                  </div>
+                  <div className="text-xs text-amber-600 dark:text-amber-400">Risk Level</div>
+                </div>
               </div>
             </div>
           )}

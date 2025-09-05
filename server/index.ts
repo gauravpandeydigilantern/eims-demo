@@ -7,6 +7,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { seedDemoUsers } from "./seedUsers";
 import { seedDatabase } from "./data/seedData";
+import { seedComprehensiveData } from "./data/comprehensiveSeedData";
 import { deviceMonitoringService } from "./services/deviceMonitoringService";
 
 const app = express();
@@ -57,11 +58,8 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Seed demo users on startup
-  await seedDemoUsers();
-  
-  // Seed database with device data (only if no devices exist)
-  await seedDatabase();
+  // Seed comprehensive data including users for all roles and all weather conditions
+  await seedComprehensiveData();
   
   const server = await registerRoutes(app);
 

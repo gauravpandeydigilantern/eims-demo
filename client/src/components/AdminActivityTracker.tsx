@@ -70,12 +70,27 @@ export default function AdminActivityTracker() {
   const [statusFilter, setStatusFilter] = useState("all");
 
   const { data: loginActivities, isLoading: loginLoading, refetch: refetchLogins } = useQuery<LoginActivity[]>({
-    queryKey: ["/api/admin/login-activities", timeFilter, statusFilter],
+    queryKey: ["/api/admin/login-activities", { timeFilter, statusFilter }],
+    queryFn: async () => {
+      const params = new URLSearchParams({ 
+        timeFilter: timeFilter || "24h", 
+        statusFilter: statusFilter || "all" 
+      });
+      const response = await fetch(`/api/admin/login-activities?${params}`);
+      if (!response.ok) throw new Error('Failed to fetch login activities');
+      return response.json();
+    },
     refetchInterval: 30 * 1000,
   });
 
   const { data: userActions, isLoading: actionsLoading, refetch: refetchActions } = useQuery<UserAction[]>({
-    queryKey: ["/api/admin/user-actions", timeFilter],
+    queryKey: ["/api/admin/user-actions", { timeFilter }],
+    queryFn: async () => {
+      const params = new URLSearchParams({ timeFilter: timeFilter || "24h" });
+      const response = await fetch(`/api/admin/user-actions?${params}`);
+      if (!response.ok) throw new Error('Failed to fetch user actions');
+      return response.json();
+    },
     refetchInterval: 30 * 1000,
   });
 
@@ -141,6 +156,18 @@ export default function AdminActivityTracker() {
     }
     return true;
   }) || [];
+
+  // Debug logging
+  console.log('AdminActivityTracker Debug:', {
+    loginActivities: loginActivities?.length || 0,
+    userActions: userActions?.length || 0,
+    activityStats: activityStats,
+    filteredLoginActivities: filteredLoginActivities.length,
+    filteredUserActions: filteredUserActions.length,
+    timeFilter,
+    statusFilter,
+    searchTerm
+  });
 
   if (statsLoading) {
     return (
@@ -246,39 +273,41 @@ export default function AdminActivityTracker() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-wrap gap-4 mb-4">
-            <div className="flex items-center space-x-2">
-              <Search className="w-4 h-4 text-muted-foreground" />
+          <div className="flex flex-col sm:flex-row sm:flex-wrap gap-4 mb-4">
+            <div className="flex items-center space-x-2 flex-1 min-w-[240px]">
+              <Search className="w-4 h-4 text-muted-foreground flex-shrink-0" />
               <Input
                 placeholder="Search by email..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-64"
+                className="w-full"
               />
             </div>
-            <Select value={timeFilter} onValueChange={setTimeFilter}>
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1h">Last Hour</SelectItem>
-                <SelectItem value="24h">Last 24h</SelectItem>
-                <SelectItem value="7d">Last 7 Days</SelectItem>
-                <SelectItem value="30d">Last 30 Days</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="success">Success</SelectItem>
-                <SelectItem value="failed">Failed</SelectItem>
-                <SelectItem value="blocked">Blocked</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Select value={timeFilter} onValueChange={setTimeFilter}>
+                <SelectTrigger className="w-full sm:w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1h">Last Hour</SelectItem>
+                  <SelectItem value="24h">Last 24h</SelectItem>
+                  <SelectItem value="7d">Last 7 Days</SelectItem>
+                  <SelectItem value="30d">Last 30 Days</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full sm:w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="success">Success</SelectItem>
+                  <SelectItem value="failed">Failed</SelectItem>
+                  <SelectItem value="blocked">Blocked</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <Tabs defaultValue="logins" className="space-y-4">
@@ -288,17 +317,17 @@ export default function AdminActivityTracker() {
             </TabsList>
 
             <TabsContent value="logins" className="space-y-4">
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto min-h-[400px]">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>User</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Login Time</TableHead>
-                      <TableHead>Duration</TableHead>
-                      <TableHead>Location</TableHead>
-                      <TableHead>Device</TableHead>
-                      <TableHead>IP Address</TableHead>
+                      <TableHead className="min-w-[180px]">User</TableHead>
+                      <TableHead className="min-w-[100px]">Status</TableHead>
+                      <TableHead className="min-w-[140px]">Login Time</TableHead>
+                      <TableHead className="min-w-[100px]">Duration</TableHead>
+                      <TableHead className="min-w-[120px]">Location</TableHead>
+                      <TableHead className="min-w-[100px]">Device</TableHead>
+                      <TableHead className="min-w-[130px]">IP Address</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -308,10 +337,11 @@ export default function AdminActivityTracker() {
                           <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full mx-auto"></div>
                         </TableCell>
                       </TableRow>
-                    ) : filteredLoginActivities.length === 0 ? (
+                    ) : !filteredLoginActivities || filteredLoginActivities.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                          No login activities found
+                          No login activities found for the selected timeframe
+                          {loginActivities === undefined && <div className="text-xs mt-2">Check console for API errors</div>}
                         </TableCell>
                       </TableRow>
                     ) : (
@@ -359,16 +389,16 @@ export default function AdminActivityTracker() {
             </TabsContent>
 
             <TabsContent value="actions" className="space-y-4">
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto min-h-[400px]">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>User</TableHead>
-                      <TableHead>Action</TableHead>
-                      <TableHead>Resource</TableHead>
-                      <TableHead>Time</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>IP Address</TableHead>
+                      <TableHead className="min-w-[180px]">User</TableHead>
+                      <TableHead className="min-w-[160px]">Action</TableHead>
+                      <TableHead className="min-w-[120px]">Resource</TableHead>
+                      <TableHead className="min-w-[140px]">Time</TableHead>
+                      <TableHead className="min-w-[100px]">Status</TableHead>
+                      <TableHead className="min-w-[130px]">IP Address</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -378,10 +408,11 @@ export default function AdminActivityTracker() {
                           <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full mx-auto"></div>
                         </TableCell>
                       </TableRow>
-                    ) : filteredUserActions.length === 0 ? (
+                    ) : !filteredUserActions || filteredUserActions.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                          No user actions found
+                          No user actions found for the selected timeframe
+                          {userActions === undefined && <div className="text-xs mt-2">Check console for API errors</div>}
                         </TableCell>
                       </TableRow>
                     ) : (
