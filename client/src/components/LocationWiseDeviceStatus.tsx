@@ -1,15 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
+import useDevices from "@/hooks/useDevices";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 
 export default function LocationWiseDeviceStatus() {
-  const { data: devicesResponse, isLoading } = useQuery<{success: boolean, data: any[]}>({
-    queryKey: ["/api/devices"],
-    refetchInterval: 30 * 1000,
-  });
-
-  // Extract devices array from response
-  const devices = devicesResponse?.data || [];
+  const { devices, isLoading } = useDevices();
 
   if (isLoading) {
     return (

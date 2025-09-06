@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
+import useDevices from "@/hooks/useDevices";
 
 interface DeviceListTableProps {
   onDeviceSelect: (deviceId: string) => void;
@@ -25,14 +26,7 @@ export default function DeviceListTable({ onDeviceSelect }: DeviceListTableProps
   const [, setLocation] = useLocation();
 
   const { user } = useAuth();
-  const { data: devicesResponse, isLoading, error } = useQuery<{success: boolean, data: any[]}>({
-    queryKey: ["/api/devices"],
-    refetchInterval: 30 * 1000,
-  });
-
-  // Extract devices array from response
-  const devices = devicesResponse?.data || [];
-  const devicesArray = Array.isArray(devices) ? devices : [];
+  const { devices: devicesArray, isLoading, error } = useDevices();
 
   // Get unique values for filter options
   const regionOptions = Array.from(new Set(devicesArray.map((device: any) => device.region).filter(Boolean))) as string[];
@@ -207,7 +201,7 @@ export default function DeviceListTable({ onDeviceSelect }: DeviceListTableProps
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-foreground">Device Status Overview</h3>
             <div className="text-sm text-muted-foreground">
-              {filteredDevices.length} of {devices.length} devices
+              {filteredDevices.length} of {devicesArray.length} devices
             </div>
           </div>
           

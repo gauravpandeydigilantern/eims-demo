@@ -422,7 +422,8 @@ export class DatabaseStorage implements IStorage {
     
     return result.map(r => ({
       region: r.region,
-      uptime: Number(r.avgUptime) || 0,
+      // Convert large uptime numbers to reasonable percentages
+      uptime: Math.min(Math.round((Number(r.avgUptime) || 0) / 1000), 100),
       deviceCount: Number(r.deviceCount),
     }));
   }
@@ -440,7 +441,8 @@ export class DatabaseStorage implements IStorage {
     
     return result.map(r => ({
       vendor: r.vendor,
-      uptime: Number(r.avgUptime) || 0,
+      // Convert large uptime numbers to reasonable percentages
+      uptime: Math.min(Math.round((Number(r.avgUptime) || 0) / 1000), 100),
       deviceCount: Number(r.deviceCount),
     }));
   }

@@ -33,9 +33,27 @@ export class WeatherService {
   }
 
   private async fetchWeatherData(lat: number, lon: number): Promise<any> {
-    // In a real implementation, this would call OpenWeatherMap API
-    // For now, return simulated weather data
-    return this.generateSimulatedWeatherData(lat, lon);
+    // Check if we have a real API key
+    if (this.weatherApiKey && this.weatherApiKey !== "default_key") {
+      try {
+        const response = await fetch(
+          `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${this.weatherApiKey}&units=metric`
+        );
+
+        if (!response.ok) {
+          throw new Error(`Weather API error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return this.processOpenWeatherData(data);
+      } catch (error) {
+        console.warn("Failed to fetch real weather data, falling back to simulated:", error);
+        return this.generateSimulatedWeatherData(lat, lon);
+      }
+    } else {
+      // No real API key, use simulated data
+      return this.generateSimulatedWeatherData(lat, lon);
+    }
   }
 
   private generateSimulatedWeatherData(lat: number, lon: number): any {
@@ -85,6 +103,55 @@ export class WeatherService {
         condition: randomCondition,
         wind_speed: Math.random() * 20,
         precipitation: randomCondition === 'rainy' ? Math.random() * 50 : 0,
+      },
+      alerts,
+    };
+  }
+
+  private processOpenWeatherData(data: any): any {
+    const condition = data.weather?.[0]?.main?.toLowerCase() || 'clear';
+    const description = data.weather?.[0]?.description || '';
+
+    const alerts = [];
+
+    // Generate alerts based on real weather conditions
+    if (condition === 'thunderstorm') {
+      alerts.push({
+        type: 'Thunderstorm',
+        severity: 'high',
+        description: `Severe thunderstorm: ${description}`,
+        startTime: new Date().toISOString(),
+        endTime: new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString(),
+      });
+    }
+
+    if (condition === 'rain' || condition === 'drizzle') {
+      alerts.push({
+        type: 'Rain',
+        severity: 'medium',
+        description: `Rain expected: ${description}`,
+        startTime: new Date().toISOString(),
+        endTime: new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString(),
+      });
+    }
+
+    if (data.main?.temp > 40) {
+      alerts.push({
+        type: 'Heat Wave',
+        severity: 'high',
+        description: 'Extreme heat warning - temperatures above 40°C',
+        startTime: new Date().toISOString(),
+        endTime: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      });
+    }
+
+    return {
+      current: {
+        temp: data.main?.temp || 25,
+        humidity: data.main?.humidity || 60,
+        condition: condition,
+        wind_speed: data.wind?.speed || 5,
+        precipitation: data.rain?.['1h'] || data.snow?.['1h'] || 0,
       },
       alerts,
     };
@@ -152,7 +219,7 @@ export class WeatherService {
         region: weather.region,
         devicesAtRisk,
         protectionActivated,
-        alertsGenerated: weather.alerts ? weather.alerts.length : 0,
+        alertsGenerated: weather.alerts && Array.isArray(weather.alerts) ? weather.alerts.length : 0,
       });
     }
 

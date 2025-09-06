@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { useLocation } from "wouter";
+import useDevices from "@/hooks/useDevices";
 
 interface DeviceMapProps {
   onDeviceSelect: (deviceId: string) => void;
@@ -24,14 +25,7 @@ export default function DeviceMap({ onDeviceSelect }: DeviceMapProps) {
   const [showClusters, setShowClusters] = useState(true);
   const [, setLocation] = useLocation();
 
-  const { data: devicesResponse, isLoading } = useQuery<{success?: boolean, data?: any[]} | any>({
-    queryKey: ["/api/devices"],
-    refetchInterval: 30 * 1000,
-  });
-
-  // Extract devices array from response
-  const devicesAny: any = devicesResponse as any;
-  const devices = Array.isArray(devicesAny) ? devicesAny : (devicesAny?.data ?? []);
+  const { devices, isLoading } = useDevices();
 
   // Listen for real-time device updates
   useWebSocket((message) => {

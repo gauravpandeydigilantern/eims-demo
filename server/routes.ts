@@ -168,6 +168,85 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Aggregated device status for dashboard UI
+  app.get('/api/device-status', isAuthenticated, hasRegionalAccess, async (req: any, res) => {
+    try {
+      const user = req.user as User;
+      // Fetch devices (storage applies active filter)
+      let devices = await storage.getAllDevices();
+
+      // Apply regional filter for NEC_ENGINEER
+      if (user.role === 'NEC_ENGINEER' && user.region) {
+        devices = devices.filter(d => d.region === user.region);
+      }
+
+      // Group devices by toll plaza
+      const cat = [] as any[];
+      const tollMap = new Map<string, any>();
+
+      for (const d of devices) {
+        const key = d.tollPlaza || d.location || 'Unknown';
+        if (!tollMap.has(key)) {
+          tollMap.set(key, {
+            LOCATION_NAME: key,
+            Total: 0,
+            TimeDiff: 0,
+            DOWN: 0,
+            STANDBY: 0,
+            ACTIVE: 0,
+            DEVICES: [] as any[],
+          });
+        }
+
+        const entry = tollMap.get(key);
+        entry.Total += 1;
+        const status = d.status as string;
+        if (status === 'LIVE') entry.ACTIVE += 1;
+        else if (status === 'MAINTENANCE' || status === 'WARNING') entry.STANDBY += 1;
+        else if (status === 'DOWN' || status === 'SHUTDOWN') entry.DOWN += 1;
+
+        entry.DEVICES.push({
+          MAC_ID: d.macAddress,
+          ASSET_ID: d.assetId,
+          Success: d.successCount || 0,
+          Pending: d.pendingCount || 0,
+          LastSync: d.lastSync ? d.lastSync.toISOString() : d.lastSeen ? d.lastSeen.toISOString() : null,
+          TimeDifference: d.timeDifference || '> 30 Min',
+          DeviceStatus: status === 'DOWN' ? 2 : status === 'MAINTENANCE' || status === 'WARNING' ? 3 : 4,
+        });
+      }
+
+      // Build CAT array with one category 'TOLLPLAZA'
+      const locs = Array.from(tollMap.values());
+      cat.push({
+        CATTYPE: 'TOLLPLAZA',
+        TimeDiff: 0,
+        DOWN: locs.reduce((s: number, l: any) => s + l.DOWN, 0),
+        STANDBY: locs.reduce((s: number, l: any) => s + l.STANDBY, 0),
+        ACTIVE: locs.reduce((s: number, l: any) => s + l.ACTIVE, 0),
+        LOC: locs,
+      });
+
+      const response = {
+        Total: devices.length,
+        TimeDiff: 0,
+        DOWN: cat[0].DOWN,
+        STANDBY: cat[0].STANDBY,
+        ACTIVE: cat[0].ACTIVE,
+        LastActive48H: 0,
+        LastActive1W: 0,
+        LastActive15D: 0,
+        LastActive1M: 0,
+        CAT: cat,
+      };
+
+      res.json({ success: true, data: response });
+    } catch (error) {
+      console.error('Error building device-status:', error);
+      res.status(500).json({ success: false, error: 'Failed to build device status' });
+    }
+  });
+
   // Role-specific statistics endpoint
   app.get('/api/role-stats', isAuthenticated, async (req: any, res) => {
     try {

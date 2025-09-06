@@ -273,18 +273,7 @@ export default function UserManagement() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="w-6 h-6" />
-            User Management
-          </CardTitle>
-          <CardDescription>
-            Manage user accounts, roles, and permissions
-          </CardDescription>
-        </CardHeader>
-      </Card>
+  
 
       {/* Controls */}
       <Card>

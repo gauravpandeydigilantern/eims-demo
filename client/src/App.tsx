@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import Landing from "@/pages/Landing";
 import DashboardPage from "@/pages/DashboardPage";
+import OptimizedDashboard from "@/components/OptimizedDashboard";
 import DataViewPage from "@/pages/DataViewPage";
 import AlertsPage from "@/pages/AlertsPage";
 import AnalyticsPage from "@/pages/AnalyticsPage";
@@ -30,6 +31,13 @@ function Router() {
       ) : (
         <>
           <Route path="/" component={() => (
+            <ErrorBoundary>
+                            <DashboardPage />
+
+              {/* <OptimizedDashboard /> */}
+            </ErrorBoundary>
+          )} />
+          <Route path="/dashboard-old" component={() => (
             <ErrorBoundary>
               <DashboardPage />
             </ErrorBoundary>

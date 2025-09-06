@@ -2088,12 +2088,12 @@ function NECGeneralDashboard() {
         </main>
       </div>
 
-      {selectedDeviceId && (
+      {/* {selectedDeviceId && (
         <DeviceDetailModal
           deviceId={selectedDeviceId}
           onClose={() => setSelectedDeviceId(null)}
         />
-      )}
+      )} */}
     </div>
   );
 }
@@ -2239,7 +2239,7 @@ function NECEngineerDashboard() {
                   <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">Avg Response Time</CardTitle>
-                      <Activity className="h-4 w-4 text-muted-foreground" />
+                      <activity moniclassName="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold text-green-600">3.2m</div>

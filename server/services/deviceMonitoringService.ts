@@ -190,7 +190,7 @@ export class DeviceMonitoringService {
           }
         );
 
-        console.log(`🚨 Generated ${alertType} alert for device ${device.id}: ${title}`);
+        // console.log(`🚨 Generated ${alertType} alert for device ${device.id}: ${title}`);
       }
 
     } catch (error) {

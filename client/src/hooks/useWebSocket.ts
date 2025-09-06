@@ -15,10 +15,25 @@ export function useWebSocket(onMessage: (message: WebSocketMessage) => void) {
   const connect = () => {
     try {
       const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-      const host = window.location.host;
-      const wsUrl = host 
-        ? `${protocol}//${host}/ws`
-        : `${protocol}//localhost:5000/ws`;
+      // Allow overriding the WebSocket URL via Vite env (VITE_WS_URL)
+      // Useful when the API server lives on a different origin or port.
+      const envWsUrl = (import.meta as any)?.env?.VITE_WS_URL as string | undefined;
+
+      // Build a safe host: prefer window.location.host, but avoid including an `:undefined` port
+      const hostname = window.location.hostname || 'localhost';
+      const port = window.location.port && window.location.port !== '0' ? window.location.port : '';
+
+      let wsUrl: string;
+      if (envWsUrl) {
+        wsUrl = envWsUrl;
+      } else if (hostname) {
+        // If no port is present, default to 5000 (the server's default)
+        wsUrl = port
+          ? `${protocol}//${hostname}:${port}/ws`
+          : `${protocol}//${hostname}:5000/ws`;
+      } else {
+        wsUrl = `${protocol}//localhost:5000/ws`;
+      }
       
       const socket = new WebSocket(wsUrl);
       

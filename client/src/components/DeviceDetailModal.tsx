@@ -30,6 +30,45 @@ export default function DeviceDetailModal({ deviceId, onClose }: DeviceDetailMod
 
   const { data: deviceData, isLoading, error } = useQuery<{device: any; metrics: any; recentAlerts: any[]}>({
     queryKey: [`/api/devices/${deviceId}`],
+    queryFn: async () => {
+      // Mock device data based on deviceId (MAC_ID)
+      return {
+        device: {
+          id: deviceId,
+          macAddress: deviceId,
+          tollPlaza: 'Mock Toll Plaza',
+          deviceType: 'FIXED_READER',
+          vendor: 'Mock Vendor',
+          model: 'Model-X1',
+          firmwareVersion: '1.2.3',
+          installDate: '2024-01-15',
+          status: 'LIVE',
+          lastSeen: new Date().toISOString(),
+          lastTransaction: new Date(Date.now() - 3600000).toISOString(),
+          transactionCount: 1234,
+          lastTagRead: new Date(Date.now() - 1800000).toISOString(),
+          readFrequency: 45,
+          readSuccessRate: 98.5,
+          lastRegistration: new Date(Date.now() - 7200000).toISOString(),
+          registrationRate: 12,
+          registrationSuccess: 156,
+          registrationFailures: 3
+        },
+        metrics: {
+          cpuUsage: 35,
+          ramUsage: 62,
+          temperature: 42.5
+        },
+        recentAlerts: [
+          {
+            id: 1,
+            type: 'WARNING',
+            title: 'High temperature detected',
+            createdAt: new Date(Date.now() - 3600000).toISOString()
+          }
+        ]
+      };
+    },
     enabled: !!deviceId,
     retry: 2,
   });

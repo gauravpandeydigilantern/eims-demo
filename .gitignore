@@ -116,3 +116,4 @@ cookies.txt
 
 # Vite config temporary files
 vite.config.ts.*
+/generated/prisma

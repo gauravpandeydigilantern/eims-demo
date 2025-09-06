@@ -78,6 +78,17 @@ function getRandomInRange(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+// Weighted device status selection for better demo data
+function getWeightedDeviceStatus(): string {
+  const rand = Math.random();
+  // 60% LIVE, 20% WARNING, 10% DOWN, 5% MAINTENANCE, 5% SHUTDOWN
+  if (rand < 0.60) return 'LIVE';
+  if (rand < 0.80) return 'WARNING';
+  if (rand < 0.90) return 'DOWN';
+  if (rand < 0.95) return 'MAINTENANCE';
+  return 'SHUTDOWN';
+}
+
 function generateDeviceId(location: any, index: number, deviceType: string): string {
   const prefix = deviceType === 'FIXED_READER' ? 'FR' : 'HHD';
   const cityCode = location.city.substring(0, 3).toUpperCase();
@@ -140,7 +151,7 @@ export async function populateEIMSDevices(): Promise<void> {
       // 15-25 Fixed Readers per toll plaza
       const frCount = getRandomInRange(15, 25);
       for (let i = 1; i <= frCount; i++) {
-        const status = getRandomElement(deviceStatuses);
+        const status = getWeightedDeviceStatus();
         const deviceId = generateDeviceId(location, deviceCounter++, 'FIXED_READER');
         const lastSeen = generateLastSeen(status);
         const vendor = getRandomElement(vendors);
@@ -155,7 +166,7 @@ export async function populateEIMSDevices(): Promise<void> {
           model: vendor === 'BCIL' ? 'BCL-RF2000' : vendor === 'ZEBRA' ? 'ZEB-RFD40' : vendor === 'IMP' ? 'IMP-RFID500' : 'ANJ-RF300',
           firmwareVersion: `${getRandomInRange(1, 3)}.${getRandomInRange(0, 9)}.${getRandomInRange(0, 9)}`,
           status,
-          subStatus: status === 'LIVE' ? (Math.random() > 0.7 ? 'active' : 'standby') : 'down',
+          subStatus: status === 'LIVE' ? (Math.random() > 0.3 ? 'active' : 'standby') : 'down',
           location: `${location.tollPlaza}, ${location.city}, ${location.region}`,
           tollPlaza: location.tollPlaza,
           region: location.region,
@@ -168,12 +179,12 @@ export async function populateEIMSDevices(): Promise<void> {
           lastTransaction: status === 'LIVE' ? new Date(lastSeen.getTime() + getRandomInRange(1, 300) * 1000) : lastSeen,
           lastTagRead: status === 'LIVE' ? new Date(lastSeen.getTime() + getRandomInRange(1, 600) * 1000) : null,
           lastRegistration: status === 'LIVE' ? new Date(lastSeen.getTime() + getRandomInRange(1, 300) * 1000) : null,
-          uptime: getRandomInRange(85, 99),
+          uptime: status === 'LIVE' ? getRandomInRange(85, 99) : status === 'WARNING' ? getRandomInRange(70, 84) : getRandomInRange(0, 50),
           transactionCount: getRandomInRange(1000, 50000),
           pendingCount: status === 'LIVE' ? getRandomInRange(0, 5) : getRandomInRange(0, 20),
           successCount: getRandomInRange(5000, 45000),
-          timeDifference: status === 'LIVE' ? `${getRandomInRange(0, 2)} Min` : '> 30 Min',
-          isActive: status !== 'SHUTDOWN',
+          timeDifference: status === 'LIVE' ? `${getRandomInRange(0, 2)} Min` : status === 'WARNING' ? `${getRandomInRange(3, 15)} Min` : '> 30 Min',
+          isActive: status !== 'SHUTDOWN' && status !== 'DOWN',
         };
 
         allDevices.push(device);
@@ -224,7 +235,7 @@ export async function populateEIMSDevices(): Promise<void> {
       // 5-10 Handheld Devices per toll plaza
       const hhdCount = getRandomInRange(5, 10);
       for (let i = 1; i <= hhdCount; i++) {
-        const status = getRandomElement(deviceStatuses);
+        const status = getWeightedDeviceStatus();
         const deviceId = generateDeviceId(location, deviceCounter++, 'HANDHELD_DEVICE');
         const lastSeen = generateLastSeen(status);
         const vendor = getRandomElement(vendors);

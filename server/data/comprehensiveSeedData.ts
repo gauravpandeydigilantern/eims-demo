@@ -640,7 +640,7 @@ async function seedComprehensiveWeatherData() {
 
     try {
       await storage.updateWeatherData(weatherData);
-      console.log(`✅ Created weather data for ${location.city}: ${weatherCondition.condition}`);
+      // console.log(`✅ Created weather data for ${location.city}: ${weatherCondition.condition}`);
     } catch (error) {
       console.error(`❌ Failed to create weather data for ${location.city}:`, error);
     }

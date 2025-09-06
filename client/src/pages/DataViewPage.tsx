@@ -5,10 +5,12 @@ import Sidebar from "@/components/Sidebar";
 import DeviceListTable from "@/components/DeviceListTable";
 import EnhancedDeviceDataView from "@/components/EnhancedDeviceDataView";
 import NLDSDeviceTable from "@/components/NLDSDeviceTable";
+import DeviceStatusDataView from "@/components/DeviceStatusDataView";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Database, Table } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Database, Table, BarChart3 } from "lucide-react";
 
 export default function DataViewPage() {
   const { user } = useAuth();
@@ -53,47 +55,66 @@ export default function DataViewPage() {
             </div>
           </div>
 
-          <div className="p-6 space-y-6">
-            {/* Device Data View based on role */}
-            {user?.role === 'NEC_GENERAL' ? (
-              <EnhancedDeviceDataView />
-            ) : user?.role === 'NEC_ENGINEER' ? (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Table className="w-5 h-5" />
-                    <span>Device Management</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <DeviceListTable onDeviceSelect={setSelectedDeviceId} />
-                </CardContent>
-              </Card>
-            ) : user?.role === 'NEC_ADMIN' ? (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Database className="w-5 h-5" />
-                    <span>Device Database Management</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <DeviceListTable onDeviceSelect={setSelectedDeviceId} />
-                </CardContent>
-              </Card>
-            ) : (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Table className="w-5 h-5" />
-                    <span>NLDS Device Overview</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <NLDSDeviceTable />
-                </CardContent>
-              </Card>
-            )}
+          <div className="p-6">
+            <Tabs defaultValue="status-data" className="space-y-6">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="status-data" className="flex items-center space-x-2">
+                  <BarChart3 className="w-4 h-4" />
+                  <span>Device Status Data</span>
+                </TabsTrigger>
+                <TabsTrigger value="management" className="flex items-center space-x-2">
+                  <Database className="w-4 h-4" />
+                  <span>Device Management</span>
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="status-data">
+                <DeviceStatusDataView />
+              </TabsContent>
+              
+              <TabsContent value="management" className="space-y-6">
+                {/* Device Data View based on role */}
+                {user?.role === 'NEC_GENERAL' ? (
+                  <EnhancedDeviceDataView />
+                ) : user?.role === 'NEC_ENGINEER' ? (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center space-x-2">
+                        <Table className="w-5 h-5" />
+                        <span>Device Management</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <DeviceListTable onDeviceSelect={setSelectedDeviceId} />
+                    </CardContent>
+                  </Card>
+                ) : user?.role === 'NEC_ADMIN' ? (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center space-x-2">
+                        <Database className="w-5 h-5" />
+                        <span>Device Database Management</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <DeviceListTable onDeviceSelect={setSelectedDeviceId} />
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center space-x-2">
+                        <Table className="w-5 h-5" />
+                        <span>NLDS Device Overview</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <NLDSDeviceTable />
+                    </CardContent>
+                  </Card>
+                )}
+              </TabsContent>
+            </Tabs>
           </div>
         </main>
       </div>

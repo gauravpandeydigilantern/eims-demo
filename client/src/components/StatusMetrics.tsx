@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import EnhancedStatusMetrics from "./EnhancedStatusMetrics";
+import useDevices from "@/hooks/useDevices";
 
 export default function StatusMetrics() {
   const [showEnhanced, setShowEnhanced] = useState(false);
@@ -25,14 +26,7 @@ export default function StatusMetrics() {
     queryKey: ["/api/analytics/status-summary"],
     refetchInterval: 30 * 1000,
   });
-
-  const { data: devicesResponse } = useQuery<{success: boolean, data: any[]}>({
-    queryKey: ["/api/devices"],
-    refetchInterval: 30 * 1000,
-  });
-
-  // Extract devices array from response
-  const devices = devicesResponse?.data || [];
+  const { devices } = useDevices();
 
   const { data: alertsSummary } = useQuery<{total: number; critical: number; warning: number; info: number}>({
     queryKey: ["/api/alerts/summary"],

@@ -61,11 +61,10 @@ async function seedDevices(): Promise<any[]> {
       for (let device = 1; device <= devicesPerPlaza; device++) {
         const deviceType = device <= devicesPerPlaza - 2 ? 'FIXED_READER' : 'HANDHELD_DEVICE';
         const vendor = vendors[Math.floor(Math.random() * vendors.length)];
-        // Realistic status distribution: 80% LIVE, 12% DOWN, 5% MAINTENANCE, 3% WARNING
+        // Updated status distribution: 70% LIVE, 20% DOWN, 10% MAINTENANCE
         const rand = Math.random();
-        const status = rand < 0.80 ? 'LIVE' : 
-                      rand < 0.92 ? 'DOWN' : 
-                      rand < 0.97 ? 'MAINTENANCE' : 'WARNING';
+        const status = rand < 0.7 ? 'LIVE' : 
+                      rand < 0.9 ? 'DOWN' : 'MAINTENANCE';
         
         const deviceId = deviceType === 'FIXED_READER' 
           ? `FR_${region.name.substring(0, 3).toUpperCase()}_${String(plaza).padStart(2, '0')}_${String(device).padStart(2, '0')}`
@@ -146,11 +145,10 @@ async function seedDeviceMetrics(devices: any[]) {
 
 async function seedAlerts(devices: any[]) {
   const downDevices = devices.filter(d => d.status === 'DOWN');
-  const warningDevices = devices.filter(d => d.status === 'WARNING');
   const maintenanceDevices = devices.filter(d => d.status === 'MAINTENANCE');
   
   // Create critical alerts only for DOWN devices (limited number)
-  for (const device of downDevices.slice(0, Math.min(5, downDevices.length))) {
+  for (const device of downDevices.slice(0, Math.min(10, downDevices.length))) { // Increased to 10 for 20% down
     const alert: InsertAlert = {
       deviceId: device.id,
       type: 'CRITICAL' as any,
@@ -160,6 +158,7 @@ async function seedAlerts(devices: any[]) {
       metadata: {
         deviceLocation: device.location,
         lastSeen: device.lastSeen,
+        region: device.region,
       },
     };
 
@@ -170,35 +169,8 @@ async function seedAlerts(devices: any[]) {
     }
   }
 
-  // Create warning alerts for WARNING devices
-  for (const device of warningDevices) {
-    const warningTypes = [
-      { title: 'High CPU Usage', message: `Device CPU usage is above 85%`, category: 'PERFORMANCE' },
-      { title: 'Communication Warning', message: `Intermittent communication detected`, category: 'PERFORMANCE' },
-      { title: 'Temperature Alert', message: `Device temperature is elevated`, category: 'PERFORMANCE' }
-    ];
-    const warning = warningTypes[Math.floor(Math.random() * warningTypes.length)];
-    
-    const alert: InsertAlert = {
-      deviceId: device.id,
-      type: 'WARNING' as any,
-      category: warning.category as any,
-      title: warning.title,
-      message: warning.message,
-      metadata: {
-        deviceLocation: device.location,
-      },
-    };
-
-    try {
-      await storage.createAlert(alert);
-    } catch (error) {
-      console.error(`Failed to create warning alert for device ${device.id}:`, error);
-    }
-  }
-
   // Create info alerts for maintenance devices
-  for (const device of maintenanceDevices) {
+  for (const device of maintenanceDevices.slice(0, Math.min(5, maintenanceDevices.length))) { // Limited to 5 for 10% maintenance
     const alert: InsertAlert = {
       deviceId: device.id,
       type: 'INFO' as any,
@@ -208,6 +180,7 @@ async function seedAlerts(devices: any[]) {
       metadata: {
         deviceLocation: device.location,
         maintenanceType: 'routine_check',
+        region: device.region,
       },
     };
 
@@ -218,18 +191,19 @@ async function seedAlerts(devices: any[]) {
     }
   }
 
-  // Create some regional weather alerts (limited)
-  const regions = ['Mumbai', 'Delhi', 'Chennai'];
-  for (const region of regions.slice(0, 2)) { // Only 2 weather alerts
+  // Create regional weather alerts based on device statuses
+  const regionsWithIssues = Array.from(new Set(downDevices.concat(maintenanceDevices).map(d => d.region)));
+  for (const region of regionsWithIssues.slice(0, 3)) { // Up to 3 weather alerts
     const weatherAlert: InsertAlert = {
-      type: Math.random() > 0.5 ? 'WARNING' as any : 'INFO' as any,
+      type: 'WARNING' as any,
       category: 'WEATHER' as any,
-      title: 'Weather Alert',
-      message: `Weather conditions may affect device performance in ${region}`,
+      title: 'Weather Impact Alert',
+      message: `Weather conditions may be affecting device performance in ${region}`,
       metadata: {
         region: region,
-        weatherType: Math.random() > 0.5 ? 'heavy_rain' : 'high_wind',
-        expectedDuration: '3-6 hours',
+        weatherType: 'adverse_conditions',
+        expectedDuration: '2-4 hours',
+        affectedDevices: devices.filter(d => d.region === region && (d.status === 'DOWN' || d.status === 'MAINTENANCE')).length,
       },
     };
 
