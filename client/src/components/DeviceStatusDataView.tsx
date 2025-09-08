@@ -162,15 +162,17 @@ export default function DeviceStatusDataView() {
                   data={pieData}
                   cx="50%"
                   cy="50%"
-                  outerRadius={80}
+                  outerRadius={60}
+                  innerRadius={20}
                   dataKey="value"
-                  label={({ name, value }) => `${name}: ${value}`}
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  labelLine={false}
                 >
                   {pieData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip formatter={(value, name) => [`${value} devices`, name]} />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>
@@ -221,7 +223,7 @@ export default function DeviceStatusDataView() {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {region.total > 0 ? Math.round((region.active / region.total) * 100) : 0}%
+                    {region.total > 0 ? Math.min(99, Math.round((region.active / region.total) * 100)) : 0}%
                   </TableCell>
                 </TableRow>
               ))}

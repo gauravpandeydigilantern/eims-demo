@@ -3,9 +3,15 @@ import { db } from "../db.js";
 import { devices, deviceMetrics, alerts, weatherData, deviceOperations } from "../../shared/schema.js";
 import { eq, desc, and, gte, count, sql, ilike, or } from "drizzle-orm";
 import { requireAuth } from "../middleware/requireAuth.js";
+import { isAuthenticated } from "../auth.js";
 import { populateEIMSDevices, populateWeatherData, createTestUsers } from "../services/dummyDataService.js";
 
 const router = express.Router();
+
+// Test endpoint to verify router is working
+router.get('/test', (req, res) => {
+  res.json({ success: true, message: 'Devices router is working!' });
+});
 
 // Initialize dummy data (development only)
 router.post("/init-data", async (req, res) => {
@@ -253,7 +259,7 @@ router.get("/:deviceId", requireAuth, async (req, res) => {
     const { deviceId } = req.params;
     const user = req.user;
 
-    // Get device with latest metrics
+    // Get device with latest metrics (support both ID and MAC address)
     const deviceResult = await db
       .select({
         device: devices,
@@ -264,7 +270,12 @@ router.get("/:deviceId", requireAuth, async (req, res) => {
         deviceMetrics,
         eq(devices.id, deviceMetrics.deviceId)
       )
-      .where(eq(devices.id, deviceId))
+      .where(
+        or(
+          eq(devices.id, deviceId),
+          eq(devices.macAddress, deviceId)
+        )
+      )
       .orderBy(desc(deviceMetrics.timestamp))
       .limit(1);
 
@@ -330,7 +341,99 @@ router.get("/:deviceId", requireAuth, async (req, res) => {
   }
 });
 
-// Execute device command (reset, restart, etc.)
+// Execute device operations (reset, restart, diagnostics, etc.)
+router.post("/:deviceId/operations", requireAuth, async (req, res) => {
+  try {
+    const { deviceId } = req.params;
+    const { operation, parameters = {} } = req.body;
+    const user = req.user;
+
+    if (!user) {
+      return res.status(401).json({ 
+        success: false, 
+        error: "Authentication required" 
+      });
+    }
+
+    // Validate operation
+    const validOperations = ['RESET_FULL', 'RESET_SERVICE', 'CONFIG_REFRESH', 'DIAGNOSTICS', 'EMERGENCY_CONFIG'];
+    if (!validOperations.includes(operation)) {
+      return res.status(400).json({ 
+        success: false, 
+        error: "Invalid operation" 
+      });
+    }
+
+    // Check if device exists and user has access (support both ID and MAC address)
+    const device = await db
+      .select()
+      .from(devices)
+      .where(
+        or(
+          eq(devices.id, deviceId),
+          eq(devices.macAddress, deviceId)
+        )
+      )
+      .limit(1);
+
+    if (device.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        error: "Device not found" 
+      });
+    }
+
+    // Check user permissions
+    const deviceData = device[0];
+    if (user.role === 'NEC_ENGINEER' && user.region && deviceData.region !== user.region) {
+      return res.status(403).json({ 
+        success: false, 
+        error: "Access denied: Device not in your assigned region" 
+      });
+    }
+
+    if (user.role === 'CLIENT') {
+      return res.status(403).json({ 
+        success: false, 
+        error: "Access denied: Clients cannot execute device operations" 
+      });
+    }
+
+    // Simulate operation execution
+    const operationResult = await simulateDeviceOperation(deviceId, operation, parameters);
+
+    // Log the operation
+    await db.insert(deviceOperations).values({
+      deviceId,
+      userId: user.id,
+      operation,
+      status: operationResult.success ? 'SUCCESS' : 'FAILED',
+      parameters,
+      result: operationResult.message,
+      errorMessage: operationResult.success ? null : operationResult.error,
+      executedAt: new Date(),
+      completedAt: new Date(),
+    });
+
+    res.json({
+      success: true,
+      message: operationResult.message,
+      data: {
+        deviceId,
+        operation,
+        result: operationResult
+      }
+    });
+  } catch (error) {
+    console.error("Error executing device operation:", error);
+    res.status(500).json({ 
+      success: false, 
+      error: "Failed to execute device operation" 
+    });
+  }
+});
+
+// Execute device command (reset, restart, etc.) - Legacy endpoint
 router.post("/:deviceId/command", requireAuth, async (req, res) => {
   try {
     const { deviceId } = req.params;
@@ -450,7 +553,57 @@ router.get("/meta/regions", requireAuth, async (req, res) => {
   }
 });
 
-// Simulate device command execution
+// Simulate device operation execution
+async function simulateDeviceOperation(deviceId: string, operation: string, parameters: any) {
+  // Simulate network delay
+  await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
+  
+  // Simulate success/failure (95% success rate)
+  const success = Math.random() > 0.05;
+  
+  if (success) {
+    // Update device status based on operation (support both ID and MAC address)
+    if (operation === 'RESET_FULL' || operation === 'RESET_SERVICE') {
+      await db
+        .update(devices)
+        .set({ 
+          lastSeen: new Date(),
+          lastSync: new Date(),
+          status: 'LIVE',
+          updatedAt: new Date()
+        })
+        .where(
+          or(
+            eq(devices.id, deviceId),
+            eq(devices.macAddress, deviceId)
+          )
+        );
+    }
+    
+    const messages = {
+      'RESET_FULL': 'Full device reboot completed successfully. Device is now online.',
+      'RESET_SERVICE': 'RFID services restarted successfully. Device is operational.',
+      'CONFIG_REFRESH': 'Configuration refreshed successfully. New settings applied.',
+      'DIAGNOSTICS': 'Diagnostic scan completed. All systems functioning normally.',
+      'EMERGENCY_CONFIG': 'Emergency configuration applied successfully.'
+    };
+    
+    return {
+      success: true,
+      message: messages[operation as keyof typeof messages] || `Operation ${operation} completed successfully`,
+      timestamp: new Date().toISOString()
+    };
+  } else {
+    return {
+      success: false,
+      message: `Operation ${operation} failed to execute`,
+      error: "Device not responding or network timeout",
+      timestamp: new Date().toISOString()
+    };
+  }
+}
+
+// Simulate device command execution - Legacy function
 async function simulateDeviceCommand(deviceId: string, command: string, parameters: any) {
   // Simulate network delay
   await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
@@ -486,5 +639,76 @@ async function simulateDeviceCommand(deviceId: string, command: string, paramete
     };
   }
 }
+
+// Fix uptime values for all devices
+router.post('/fix-uptime', requireAuth, async (req, res) => {
+  try {
+    const allDevices = await db.select().from(devices);
+    let fixed = 0;
+    
+    for (const device of allDevices) {
+      if (device.uptime && device.uptime > 100) {
+        const newUptime = device.status === 'LIVE' ? 
+          Math.floor(Math.random() * 30) + 70 : 
+          Math.floor(Math.random() * 50);
+          
+        await db.update(devices)
+          .set({ uptime: newUptime })
+          .where(eq(devices.id, device.id));
+          
+        fixed++;
+      }
+    }
+    
+    res.json({ success: true, message: `Fixed ${fixed} devices` });
+  } catch (error) {
+    console.error('Error fixing uptime:', error);
+    res.status(500).json({ success: false, error: 'Failed to fix uptime' });
+  }
+});
+
+// Route to update a device's last transaction time, making it "Active"
+router.post('/:deviceId/touch', isAuthenticated, async (req: any, res) => {
+    try {
+        const { deviceId } = req.params;
+        const user = req.user;
+
+        console.log('Touch endpoint called for device:', deviceId);
+        console.log('User:', user ? user.email : 'No user');
+
+        if (!user) {
+            return res.status(401).json({ success: false, error: "Authentication required" });
+        }
+
+        // Check if device exists and user has access
+        const device = await db
+            .select()
+            .from(devices)
+            .where(eq(devices.id, deviceId))
+            .limit(1);
+
+        if (device.length === 0) {
+            return res.status(404).json({ success: false, error: "Device not found" });
+        }
+
+        const deviceData = device[0];
+        if (user.role === 'NEC_ENGINEER' && user.region && deviceData.region !== user.region) {
+            return res.status(403).json({ success: false, error: "Access denied: Device not in your assigned region" });
+        }
+
+        await db.update(devices).set({ 
+            lastTransaction: new Date(),
+            status: 'LIVE',
+            lastSeen: new Date(),
+            updatedAt: new Date()
+        }).where(eq(devices.id, deviceId));
+        
+        console.log('Device touched successfully:', deviceId);
+        res.json({ success: true, message: `Device ${deviceId} transaction time updated.` });
+    } catch (error) {
+        console.error(`Error touching device ${req.params.deviceId}:`, error);
+        res.status(500).json({ success: false, message: "Failed to update device transaction time.", error: error.message });
+    }
+});
 
 export default router;

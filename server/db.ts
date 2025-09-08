@@ -39,17 +39,28 @@ const likelySelfSigned = dbUrl.includes('sslmode=require') || dbUrl.includes('ai
 // Create a single pool instance and export it.
 let poolInstance: any;
 if (isLocal || !isNeon) {
+  const poolConfig = {
+    connectionString: process.env.DATABASE_URL,
+    max: 5, // Limit max connections
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 2000,
+  };
+  
   if (likelySelfSigned) {
-  // Allow self-signed certs in development for providers like Aiven by disabling strict TLS validation.
-  // Note: this is acceptable for local development but not recommended for production.
-  process.env.NODE_TLS_REJECT_UNAUTHORIZED = process.env.NODE_TLS_REJECT_UNAUTHORIZED || '0';
-    // Pass ssl option to pg Pool to accept self-signed certificates used by some providers.
-    poolInstance = new PgPool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+    // Allow self-signed certs in development for providers like Aiven by disabling strict TLS validation.
+    // Note: this is acceptable for local development but not recommended for production.
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = process.env.NODE_TLS_REJECT_UNAUTHORIZED || '0';
+    poolInstance = new PgPool({ ...poolConfig, ssl: { rejectUnauthorized: false } });
   } else {
-    poolInstance = new PgPool({ connectionString: process.env.DATABASE_URL });
+    poolInstance = new PgPool(poolConfig);
   }
 } else {
-  poolInstance = new NeonPool({ connectionString: process.env.DATABASE_URL });
+  poolInstance = new NeonPool({ 
+    connectionString: process.env.DATABASE_URL,
+    max: 5,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 2000,
+  });
 }
 console.log('DB pool created; isNeon=', isNeon, 'likelySelfSigned=', likelySelfSigned, 'NODE_TLS_REJECT_UNAUTHORIZED=', process.env.NODE_TLS_REJECT_UNAUTHORIZED);
 export const pool = poolInstance;

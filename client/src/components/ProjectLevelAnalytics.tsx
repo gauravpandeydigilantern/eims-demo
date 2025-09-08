@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { ChartContainer, ChartTooltip as UIChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { 
@@ -10,7 +10,7 @@ import {
   XAxis, 
   YAxis, 
   CartesianGrid, 
-  Tooltip, 
+  Tooltip as RechartsTooltip, 
   Legend, 
   BarChart, 
   Bar, 
@@ -28,6 +28,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -41,7 +42,8 @@ import {
   BarChart3,
   PieChart as PieChartIcon,
   Download,
-  Filter
+  Filter,
+  Info
 } from "lucide-react";
 import { useLocation } from "wouter";
 
@@ -74,8 +76,8 @@ export default function ProjectLevelAnalytics() {
     refetchInterval: 30 * 1000,
   });
 
-  // Extract devices array from response
-  const devices = devicesResponse?.data || [];
+  // Extract devices array from response - check if it's nested
+  const devices = devicesResponse?.success ? devicesResponse.data : (devicesResponse?.data || devicesResponse || []);
 
   const { data: statusSummary, isLoading: statusLoading } = useQuery<Array<{status: string; count: number}>>({
     queryKey: ["/api/analytics/status-summary"],
@@ -126,12 +128,13 @@ export default function ProjectLevelAnalytics() {
     );
   }
 
-  // Calculate comprehensive metrics
-  const totalDevices = devices?.length || 0;
-  const liveDevices = devices?.filter(d => d.status === 'LIVE')?.length || 0;
-  const downDevices = devices?.filter(d => d.status === 'DOWN')?.length || 0;
-  const maintenanceDevices = devices?.filter(d => d.status === 'MAINTENANCE')?.length || 0;
-  const warningDevices = devices?.filter(d => d.status === 'WARNING')?.length || 0;
+  // Calculate comprehensive metrics - ensure we're counting actual devices
+  const actualDevices = Array.isArray(devices) ? devices : [];
+  const totalDevices = actualDevices.length;
+  const liveDevices = actualDevices.filter(d => d.status === 'LIVE').length;
+  const downDevices = actualDevices.filter(d => d.status === 'DOWN').length;
+  const maintenanceDevices = actualDevices.filter(d => d.status === 'MAINTENANCE').length;
+  const warningDevices = actualDevices.filter(d => d.status === 'WARNING').length;
 
   const uptimePercentage = totalDevices > 0 ? Math.round((liveDevices / totalDevices) * 100) : 0;
   const downPercentage = totalDevices > 0 ? Math.round((downDevices / totalDevices) * 100) : 0;
@@ -149,7 +152,7 @@ export default function ProjectLevelAnalytics() {
   ];
 
   // Regional breakdown with real data
-  const regionalData = devices?.reduce((acc, device) => {
+  const regionalData = actualDevices.reduce((acc, device) => {
     const region = device.region || 'Unknown';
     if (!acc[region]) {
       acc[region] = { 
@@ -166,7 +169,7 @@ export default function ProjectLevelAnalytics() {
     acc[region].total++;
     acc[region][device.status.toLowerCase()]++;
     return acc;
-  }, {} as Record<string, any>) || {};
+  }, {} as Record<string, any>);
 
   const regionalChartData = Object.values(regionalData).map((region: any) => ({
     ...region,
@@ -174,7 +177,7 @@ export default function ProjectLevelAnalytics() {
   }));
 
   // Vendor performance analytics
-  const vendorData = devices?.reduce((acc, device) => {
+  const vendorData = actualDevices.reduce((acc, device) => {
     const vendor = device.vendor || 'Unknown';
     if (!acc[vendor]) {
       acc[vendor] = { 
@@ -188,7 +191,7 @@ export default function ProjectLevelAnalytics() {
     acc[vendor].devices++;
     if (device.status === 'LIVE') acc[vendor].uptime++;
     return acc;
-  }, {} as Record<string, any>) || {};
+  }, {} as Record<string, any>);
 
   const vendorAnalytics = Object.values(vendorData).map((vendor: any) => {
     const uptimeRate = vendor.devices > 0 ? Math.round((vendor.uptime / vendor.devices) * 100) : 0;
@@ -207,7 +210,7 @@ export default function ProjectLevelAnalytics() {
     { metric: 'CPU Usage', current: Math.min(95, 20 + (downDevices * 5)), optimal: 60, status: downDevices > 5 ? 'warning' : 'good' },
     { metric: 'Memory Usage', current: Math.min(90, 55 + (totalDevices / 10)), optimal: 80, status: totalDevices > 70 ? 'warning' : 'good' },
     { metric: 'Network Load', current: Math.min(95, 60 + (liveDevices / 5)), optimal: 85, status: liveDevices > 60 ? 'warning' : 'good' },
-    { metric: 'Storage Usage', current: Math.min(85, 35 + (devices.length / 10)), optimal: 70, status: 'good' },
+    { metric: 'Storage Usage', current: Math.min(85, 35 + (actualDevices.length / 10)), optimal: 70, status: 'good' },
     { metric: 'Temperature', current: Math.min(75, 35 + (warningDevices * 2)), optimal: 65, status: warningDevices > 10 ? 'warning' : 'good' },
     { metric: 'Network Latency', current: Math.max(15, 45 - (uptimePercentage / 3)), optimal: 30, status: uptimePercentage > 95 ? 'good' : 'warning' }
   ];
@@ -280,20 +283,44 @@ export default function ProjectLevelAnalytics() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigateToFilteredView('status', 'LIVE')} data-testid="kpi-total-devices">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Devices</CardTitle>
+                <div className="flex items-center gap-2">
+                  <CardTitle className="text-sm font-medium">Total Devices</CardTitle>
+                  <TooltipProvider>
+                    <UITooltip>
+                      <TooltipTrigger>
+                        <Info className="h-3 w-3 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Total number of RFID devices deployed across all regions</p>
+                      </TooltipContent>
+                    </UITooltip>
+                  </TooltipProvider>
+                </div>
                 <Database className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{totalDevices.toLocaleString()}</div>
                 <p className="text-xs text-muted-foreground">
-                  <span className="text-green-600">+2.1%</span> from last month
+                  <span className="text-green-600">{liveDevices}</span> UP - {Math.round((liveDevices/totalDevices)*100)}%
                 </p>
               </CardContent>
             </Card>
 
             <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigateToFilteredView('status', 'LIVE')} data-testid="kpi-system-uptime">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">System Uptime</CardTitle>
+                <div className="flex items-center gap-2">
+                  <CardTitle className="text-sm font-medium">System Uptime</CardTitle>
+                  <TooltipProvider>
+                    <UITooltip>
+                      <TooltipTrigger>
+                        <Info className="h-3 w-3 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Percentage of devices currently LIVE and operational</p>
+                      </TooltipContent>
+                    </UITooltip>
+                  </TooltipProvider>
+                </div>
                 <CheckCircle className="h-4 w-4 text-green-500" />
               </CardHeader>
               <CardContent>
@@ -307,7 +334,19 @@ export default function ProjectLevelAnalytics() {
 
             <Card className="cursor-pointer hover:shadow-md transition-shadow" data-testid="kpi-efficiency-score">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Efficiency Score</CardTitle>
+                <div className="flex items-center gap-2">
+                  <CardTitle className="text-sm font-medium">Efficiency Score</CardTitle>
+                  <TooltipProvider>
+                    <UITooltip>
+                      <TooltipTrigger>
+                        <Info className="h-3 w-3 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Overall system performance score based on uptime and downtime</p>
+                      </TooltipContent>
+                    </UITooltip>
+                  </TooltipProvider>
+                </div>
                 <Activity className="h-4 w-4 text-blue-500" />
               </CardHeader>
               <CardContent>
@@ -321,7 +360,19 @@ export default function ProjectLevelAnalytics() {
 
             <Card className="cursor-pointer hover:shadow-md transition-shadow" data-testid="kpi-active-alerts">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Active Alerts</CardTitle>
+                <div className="flex items-center gap-2">
+                  <CardTitle className="text-sm font-medium">Active Alerts</CardTitle>
+                  <TooltipProvider>
+                    <UITooltip>
+                      <TooltipTrigger>
+                        <Info className="h-3 w-3 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Number of unresolved alerts requiring attention</p>
+                      </TooltipContent>
+                    </UITooltip>
+                  </TooltipProvider>
+                </div>
                 <AlertTriangle className="h-4 w-4 text-orange-500" />
               </CardHeader>
               <CardContent>
@@ -357,7 +408,7 @@ export default function ProjectLevelAnalytics() {
                     <XAxis dataKey="period" />
                     <YAxis yAxisId="left" />
                     <YAxis yAxisId="right" orientation="right" />
-                    <Tooltip />
+                    <RechartsTooltip />
                     <Legend />
                     <Area yAxisId="left" type="monotone" dataKey="efficiency" fill="#3b82f6" fillOpacity={0.3} stroke="#3b82f6" name="Efficiency %" />
                     <Bar yAxisId="left" dataKey="uptime" fill="#22c55e" name="Uptime %" />
@@ -429,7 +480,7 @@ export default function ProjectLevelAnalytics() {
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
-                      <Tooltip />
+                      <RechartsTooltip />
                     </PieChart>
                   </ResponsiveContainer>
                 </ChartContainer>
@@ -514,7 +565,7 @@ export default function ProjectLevelAnalytics() {
                           <Cell key={`cell-${index}`} fill={CHART_COLORS.primary[index % CHART_COLORS.primary.length]} />
                         ))}
                       </Pie>
-                      <Tooltip />
+                      <RechartsTooltip />
                     </PieChart>
                   </ResponsiveContainer>
                 </ChartContainer>
@@ -532,7 +583,7 @@ export default function ProjectLevelAnalytics() {
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="vendor" />
                       <YAxis />
-                      <Tooltip />
+                      <RechartsTooltip />
                       <Legend />
                       <Bar dataKey="uptimeRate" fill="#3b82f6" name="Uptime Rate %" />
                       <Bar dataKey="roi" fill="#22c55e" name="ROI %" />
@@ -558,7 +609,7 @@ export default function ProjectLevelAnalytics() {
                     <XAxis dataKey="hour" />
                     <YAxis yAxisId="left" />
                     <YAxis yAxisId="right" orientation="right" />
-                    <Tooltip />
+                    <RechartsTooltip />
                     <Legend />
                     <Bar yAxisId="left" dataKey="successful" fill="#22c55e" name="Successful Transactions" />
                     <Bar yAxisId="left" dataKey="failed" fill="#ef4444" name="Failed Transactions" />
@@ -593,7 +644,7 @@ export default function ProjectLevelAnalytics() {
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
-                      <Tooltip />
+                      <RechartsTooltip />
                     </PieChart>
                   </ResponsiveContainer>
                 </ChartContainer>

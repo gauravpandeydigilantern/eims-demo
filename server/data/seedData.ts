@@ -61,10 +61,10 @@ async function seedDevices(): Promise<any[]> {
       for (let device = 1; device <= devicesPerPlaza; device++) {
         const deviceType = device <= devicesPerPlaza - 2 ? 'FIXED_READER' : 'HANDHELD_DEVICE';
         const vendor = vendors[Math.floor(Math.random() * vendors.length)];
-        // Updated status distribution: 70% LIVE, 20% DOWN, 10% MAINTENANCE
-        const rand = Math.random();
-        const status = rand < 0.7 ? 'LIVE' : 
-                      rand < 0.9 ? 'DOWN' : 'MAINTENANCE';
+        // Fixed status: First 10 devices always LIVE for demo
+        const status = deviceCounter <= 10 ? 'LIVE' : 
+                      Math.random() < 0.7 ? 'LIVE' : 
+                      Math.random() < 0.9 ? 'DOWN' : 'MAINTENANCE';
         
         const deviceId = deviceType === 'FIXED_READER' 
           ? `FR_${region.name.substring(0, 3).toUpperCase()}_${String(plaza).padStart(2, '0')}_${String(device).padStart(2, '0')}`
@@ -96,7 +96,7 @@ async function seedDevices(): Promise<any[]> {
           lastTransaction: status === 'LIVE' ? new Date(Date.now() - Math.random() * 60 * 60 * 1000) : undefined, // Random time in past hour for live devices
           lastTagRead: status === 'LIVE' ? new Date(Date.now() - Math.random() * 30 * 60 * 1000) : undefined, // Random time in past 30 min
           lastRegistration: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000), // Random time in past week
-          uptime: status === 'LIVE' ? Math.floor(Math.random() * 100000) : 0,
+          uptime: status === 'LIVE' ? Math.floor(Math.random() * 30) + 70 : 0, // 70-99% uptime
           transactionCount: Math.floor(Math.random() * 10000),
           pendingCount: status === 'LIVE' ? Math.floor(Math.random() * 20) : 0, // Pending transactions for live devices
           successCount: status === 'LIVE' ? Math.floor(Math.random() * 8000) + 1000 : 0, // Success count for live devices

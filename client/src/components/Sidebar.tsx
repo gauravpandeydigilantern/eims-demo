@@ -91,6 +91,21 @@ export default function Sidebar({ isOpen, onClose, isMobile, activeTab }: Sideba
               </svg>
               <span>Data View</span>
             </button>
+
+            <button 
+              className={`flex items-center space-x-3 rounded-lg px-3 py-2 font-medium w-full text-left transition-colors ${
+                isRouteActive('/devices') 
+                  ? 'text-foreground bg-primary/10' 
+                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+              }`}
+              onClick={handleLinkClick('/devices')}
+              data-testid="link-devices"
+            >
+              <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+              </svg>
+              <span>Device Management</span>
+            </button>
             
             <button 
               className={`flex items-center justify-between rounded-lg px-3 py-2 w-full text-left transition-colors ${

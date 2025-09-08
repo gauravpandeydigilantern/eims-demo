@@ -133,7 +133,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         online: devices.filter(d => d.status === 'LIVE').length,
         offline: devices.filter(d => d.status === 'SHUTDOWN').length,
         maintenance: devices.filter(d => d.status === 'MAINTENANCE').length,
-        avgUptime: devices.length > 0 ? devices.reduce((acc, d) => acc + (d.uptime || 0), 0) / devices.length : 0
+        avgUptime: devices.length > 0 ? Math.min(99, devices.reduce((acc, d) => acc + Math.min(99, d.uptime || 0), 0) / devices.length) : 0
       };
       res.json(stats);
     } catch (error) {
@@ -305,24 +305,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/devices/:id/operations', isAuthenticated, hasRole(['NEC_GENERAL', 'NEC_ENGINEER', 'NEC_ADMIN']), async (req: any, res) => {
-    try {
-      const user = req.user as User;
-      const { operation, parameters } = req.body;
-      
-      const result = await deviceService.executeDeviceOperation(
-        req.params.id,
-        operation,
-        user.id,
-        parameters
-      );
-      
-      res.json(result);
-    } catch (error) {
-      console.error("Error executing device operation:", error);
-      res.status(500).json({ message: "Failed to execute operation" });
-    }
-  });
+  // Device operations route moved to modular devices router
 
   // Analytics routes
   app.get('/api/analytics/status-summary', isAuthenticated, hasRole(['NEC_GENERAL', 'NEC_ENGINEER', 'NEC_ADMIN', 'CLIENT']), async (req, res) => {
@@ -501,7 +484,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalDevices: devices.length,
         onlineDevices: devices.filter(d => d.status === 'LIVE').length,
         criticalAlerts: alerts.filter((a: any) => a.severity === 'CRITICAL').length,
-        avgPerformance: devices.reduce((acc, d) => acc + (d.uptime || 0), 0) / devices.length,
+        avgPerformance: Math.min(99, devices.reduce((acc, d) => acc + Math.min(99, d.uptime || 0), 0) / devices.length),
         lastUpdated: new Date().toISOString()
       };
       
@@ -531,7 +514,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         region: region,
         totalDevices: filteredDevices.length,
         onlineDevices: filteredDevices.filter(d => d.status === 'LIVE').length,
-        avgPerformance: filteredDevices.reduce((acc, d) => acc + (d.uptime || 0), 0) / filteredDevices.length,
+        avgPerformance: Math.min(99, filteredDevices.reduce((acc, d) => acc + Math.min(99, d.uptime || 0), 0) / filteredDevices.length),
         lastUpdated: new Date().toISOString()
       };
       
@@ -1003,44 +986,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }
 
-  // Simulate real-time updates every 30 seconds
+  // Simulate real-time updates every 60 seconds (reduced frequency)
   setInterval(async () => {
     try {
-      // Broadcast device status updates
-      const devices = await storage.getAllDevices();
-      const randomDevice = devices[Math.floor(Math.random() * devices.length)];
+      // Only broadcast if there are active connections
+      if (wss.clients.size === 0) return;
       
-      if (randomDevice) {
-        const updatedMetrics = {
-          deviceId: randomDevice.id,
-          cpuUsage: Math.floor(Math.random() * 100),
-          ramUsage: Math.floor(Math.random() * 100),
-          temperature: 25 + Math.random() * 30,
-          timestamp: new Date(),
-        };
+      // Broadcast simple metrics without heavy DB queries
+      const updatedMetrics = {
+        deviceId: 'sample_device',
+        cpuUsage: Math.floor(Math.random() * 100),
+        ramUsage: Math.floor(Math.random() * 100),
+        temperature: 25 + Math.random() * 30,
+        timestamp: new Date(),
+      };
 
-        broadcastUpdate('device_metrics', updatedMetrics);
-      }
-
-      // Broadcast alert updates
-      const alertsSummary = await alertService.getAlertsSummary();
-      broadcastUpdate('alerts_summary', alertsSummary);
+      broadcastUpdate('device_metrics', updatedMetrics);
 
     } catch (error) {
       console.error('Error in real-time update:', error);
     }
-  }, 30000);
+  }, 60000);
 
-  // Update weather data every hour
-  setInterval(async () => {
-    try {
-      await weatherService.updateWeatherData();
-      const weatherData = await storage.getLatestWeatherData();
-      broadcastUpdate('weather_update', weatherData);
-    } catch (error) {
-      console.error('Error updating weather data:', error);
-    }
-  }, 60 * 60 * 1000);
+  // Disable automatic weather updates to reduce DB load
+  // setInterval(async () => {
+  //   try {
+  //     await weatherService.updateWeatherData();
+  //     const weatherData = await storage.getLatestWeatherData();
+  //     broadcastUpdate('weather_update', weatherData);
+  //   } catch (error) {
+  //     console.error('Error updating weather data:', error);
+  //   }
+  // }, 60 * 60 * 1000);
 
   return httpServer;
 }

@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 import { useLocation, useRoute } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Search, Filter, Download, Eye, Activity, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Search, Filter, Download, Eye, Activity, AlertTriangle, Wifi } from "lucide-react";
 import NavigationHeader from "@/components/NavigationHeader";
 import Sidebar from "@/components/Sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -27,6 +27,78 @@ export default function DeviceList() {
   const [vendorFilter, setVendorFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
+  const queryClient = useQueryClient();
+  const [pendingDevices, setPendingDevices] = useState<Set<string>>(new Set());
+
+  const touchDeviceMutation = useMutation({
+    mutationFn: async (deviceId: string) => {
+      console.log('Starting ping for device:', deviceId);
+      console.log('Current window location:', window.location.href);
+      
+      // Add device to pending set
+      setPendingDevices(prev => {
+        const newSet = new Set(prev);
+        newSet.add(deviceId);
+        return newSet;
+      });
+      
+      const apiUrl = `/api/devices/${deviceId}/touch`;
+      console.log('Making request to:', apiUrl);
+      
+      try {
+        const response = await fetch(apiUrl, { 
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include', // Include cookies for authentication
+        });
+        
+        console.log('Response status:', response.status);
+        console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+        
+        const responseText = await response.text();
+        console.log('Response text:', responseText);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${responseText}`);
+        }
+        
+        try {
+          return JSON.parse(responseText);
+        } catch (parseError) {
+          console.error('Failed to parse response as JSON:', parseError);
+          throw new Error(`Invalid JSON response: ${responseText.substring(0, 100)}...`);
+        }
+      } catch (fetchError) {
+        console.error('Fetch error details:', fetchError);
+        const error = fetchError as Error;
+        console.error('Error name:', error.name);
+        console.error('Error message:', error.message);
+        throw new Error(`Network error: ${error.message}`);
+      }
+    },
+    onSuccess: (data, deviceId) => {
+      console.log('Device ping successful:', data);
+      setPendingDevices(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(deviceId);
+        return newSet;
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/devices"] });
+      // Show success message
+      alert(`Device ${deviceId} pinged successfully!`);
+    },
+    onError: (error: Error, deviceId) => {
+      console.error('Device ping failed:', error);
+      setPendingDevices(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(deviceId);
+        return newSet;
+      });
+      alert(`Failed to ping device ${deviceId}: ${error.message}`);
+    },
+  });
 
   // Auto-populate filters from URL parameters
   useEffect(() => {
@@ -157,7 +229,6 @@ export default function DeviceList() {
           onClose={() => setSidebarOpen(false)}
           isMobile={isMobile}
           activeTab={activeTab}
-          onTabChange={setActiveTab}
         />
         
         <main className="flex-1 overflow-hidden">
@@ -252,12 +323,15 @@ export default function DeviceList() {
           <div className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {paginatedDevices.map((device: any) => (
-                <Card key={device.id} className="hover:shadow-lg transition-shadow cursor-pointer" 
-                      onClick={() => viewDeviceDetail(device.id)}
+                <Card key={device.id} className="hover:shadow-lg transition-shadow" 
                       data-testid={`card-device-${device.id}`}>
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg" data-testid={`title-device-${device.id}`}>
+                      <CardTitle 
+                        className="text-lg cursor-pointer" 
+                        onClick={() => viewDeviceDetail(device.id)}
+                        data-testid={`title-device-${device.id}`}
+                      >
                         {device.id}
                       </CardTitle>
                       <Badge className={getStatusBadge(device.status)}>
@@ -297,14 +371,27 @@ export default function DeviceList() {
                       variant="outline" 
                       size="sm" 
                       className="w-full"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        viewDeviceDetail(device.id);
-                      }}
+                      onClick={() => viewDeviceDetail(device.id)}
                       data-testid={`button-view-${device.id}`}
                     >
                       <Eye className="w-4 h-4 mr-2" />
                       View Details
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full mt-2"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('Pinging device:', device.id);
+                        touchDeviceMutation.mutate(device.id);
+                      }}
+                      disabled={pendingDevices.has(device.id)}
+                      data-testid={`button-touch-${device.id}`}
+                    >
+                      <Wifi className="w-4 h-4 mr-2" />
+                      {pendingDevices.has(device.id) ? 'Pinging...' : 'Ping Device'}
                     </Button>
                   </CardContent>
                 </Card>

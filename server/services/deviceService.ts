@@ -143,6 +143,12 @@ export class DeviceService {
       });
     }
   }
+
+  async touchDevice(deviceId: string): Promise<void> {
+    await storage.updateDevice(deviceId, {
+      lastTransaction: new Date(),
+    });
+  }
 }
 
 export const deviceService = new DeviceService();

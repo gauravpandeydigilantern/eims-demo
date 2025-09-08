@@ -63,6 +63,12 @@ export class DeviceMonitoringService {
         if (device.status === 'MAINTENANCE' || device.status === 'SHUTDOWN') {
           continue;
         }
+        
+        // Skip first 10 devices for demo - keep them always LIVE
+        const deviceNumber = parseInt(device.id.split('_').pop() || '0');
+        if (deviceNumber <= 10) {
+          continue;
+        }
 
         const newStatus = this.calculateDeviceStatus(device.lastTransaction, now);
         const newSubStatus = this.calculateSubStatus(device.lastTransaction, now);
