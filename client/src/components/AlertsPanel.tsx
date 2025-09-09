@@ -188,8 +188,8 @@ export default function AlertsPanel() {
   const recentAlerts = alertsArray.slice(0, 5);
 
   return (
-    <Card>
-      <div className="p-6 border-b border-border">
+    <Card className="flex flex-col">
+      <div className="p-6 border-b border-border flex-shrink-0">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-foreground">Active Alerts</h3>
           <Button variant="ghost" size="sm" data-testid="button-alert-settings">
@@ -201,7 +201,7 @@ export default function AlertsPanel() {
         </div>
       </div>
       
-      <CardContent className="p-6 space-y-4 max-h-96 overflow-y-auto">
+      <CardContent className="p-6 space-y-4 flex-1 overflow-y-auto max-h-[1000px]">
         {recentAlerts.length === 0 ? (
           <div className="text-center py-8">
             <svg className="w-12 h-12 text-muted-foreground mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -13,6 +13,8 @@ import WeeklyHealthProgress from "@/components/WeeklyHealthProgress";
 import AlertsPanel from "@/components/AlertsPanel";
 import AIAssistantPanel from "@/components/AIAssistantPanel";
 import WeatherPanel from "@/components/WeatherPanel";
+import AIAssistant from "@/components/AIAssistant";
+import LocationIntelligence from "@/components/LocationIntelligence";
 import RoleSpecificStats from "@/components/RoleSpecificStats";
 import AdminActivityTracker from "@/components/AdminActivityTracker";
 import ProjectLevelAnalytics from "@/components/ProjectLevelAnalytics";
@@ -91,8 +93,7 @@ export default function DashboardPage() {
         </TabsContent>
         
         <TabsContent value="weather" className="space-y-6">
-          <WeatherPanel />
-          <Card className="border-l-4 border-l-green-500">
+            <Card className="border-l-4 border-l-green-500">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2">
                 <div className="p-2 bg-green-100 rounded-lg">
@@ -200,9 +201,12 @@ export default function DashboardPage() {
               </div>
             </CardContent>
           </Card>
+          <WeatherPanel />
+        
         </TabsContent>
         
         <TabsContent value="geolocation" className="space-y-6">
+          <LocationIntelligence />
           <Card>
             <CardHeader>
               <CardTitle>Device Network Overview</CardTitle>
@@ -211,36 +215,10 @@ export default function DashboardPage() {
               <DeviceMap onDeviceSelect={setSelectedDeviceId} />
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Location Analytics</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold">847</div>
-                  <div className="text-sm text-muted-foreground">Total Locations</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">823</div>
-                  <div className="text-sm text-muted-foreground">Active Zones</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold">15,420 km²</div>
-                  <div className="text-sm text-muted-foreground">Coverage Area</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">{userStats?.totalDevices || 0}</div>
-                  <div className="text-sm text-muted-foreground">Total Devices</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </TabsContent>
         
         <TabsContent value="activity" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <AlertsPanel />
+          <div className="grid grid-cols-1">
             <AdminActivityTracker />
           </div>
           <WeeklyHealthProgress />
@@ -323,7 +301,20 @@ export default function DashboardPage() {
         </TabsContent>
         
         <TabsContent value="activity" className="space-y-6">
-          <AlertsPanel />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Device Status Table</CardTitle>
+                </CardHeader>
+                <CardContent className="overflow-auto">
+                  <DeviceListTable onDeviceSelect={setSelectedDeviceId} />
+                </CardContent>
+              </Card>
+              <AlertsPanel />
+            </div>
+            <AIAssistant />
+          </div>
           <WeeklyHealthProgress />
         </TabsContent>
       </Tabs>
@@ -472,7 +463,10 @@ export default function DashboardPage() {
         </TabsContent>
         
         <TabsContent value="activity" className="space-y-6">
-          <AlertsPanel />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <AlertsPanel />
+            <AIAssistant />
+          </div>
           <AdminActivityTracker />
           <WeeklyHealthProgress />
         </TabsContent>

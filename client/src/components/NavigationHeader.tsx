@@ -2,6 +2,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
 
 interface NavigationHeaderProps {
   onToggleSidebar: () => void;
@@ -9,22 +10,62 @@ interface NavigationHeaderProps {
 
 export default function NavigationHeader({ onToggleSidebar }: NavigationHeaderProps) {
   const { user } = useAuth();
+  const [userLocation, setUserLocation] = useState<{lat: number, lon: number} | null>(null);
+  const [locationName, setLocationName] = useState<string>('Location');
+
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setUserLocation({ lat: latitude, lon: longitude });
+          
+          // Get location name from coordinates
+          fetch(`/api/weather/location?lat=${latitude}&lon=${longitude}`)
+            .then(res => res.json())
+            .then(data => {
+              setLocationName(data.name || 'Your Location');
+            })
+            .catch(() => setLocationName('Your Location'));
+        },
+        () => setLocationName('Location')
+      );
+    }
+  }, []);
   
   const { data: weatherAlerts } = useQuery({
     queryKey: ["/api/weather/alerts"],
     refetchInterval: 5 * 60 * 1000, // 5 minutes
   });
 
-  const { data: alertsSummary } = useQuery({
+  const { data: alertsSummary } = useQuery<{ unread: number } | null>({
     queryKey: ["/api/alerts/summary"],
     refetchInterval: 30 * 1000, // 30 seconds
+  });
+
+  const { data: weatherData } = useQuery<Array<{ city?: string; temperature?: number | string }>>({
+    queryKey: ["/api/weather"],
+    refetchInterval: 5 * 60 * 1000, // 5 minutes
+  });
+
+  const { data: currentLocationWeather } = useQuery({
+    queryKey: ["current-location-weather", userLocation],
+    queryFn: async () => {
+      if (!userLocation) return null;
+      const response = await fetch(
+        `/api/weather/current?lat=${userLocation.lat}&lon=${userLocation.lon}`
+      );
+      if (!response.ok) throw new Error('Weather fetch failed');
+      return response.json();
+    },
+    enabled: !!userLocation,
+    refetchInterval: 5 * 60 * 1000,
   });
 
   const handleLogout = () => {
     window.location.href = "/api/logout";
   };
 
-  const currentWeatherAlert = weatherAlerts?.[0];
 
   return (
     <nav className="bg-card border-b border-border shadow-sm">
@@ -53,15 +94,32 @@ export default function NavigationHeader({ onToggleSidebar }: NavigationHeaderPr
           </div>
           
           <div className="flex items-center space-x-4">
-            {/* Weather Alert */}
-            {currentWeatherAlert && (
-              <div className="hidden md:flex items-center space-x-2 bg-warning/10 text-warning px-3 py-1 rounded-lg">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 7.172V5L8 4z" />
-                </svg>
-                <span className="text-sm font-medium">{currentWeatherAlert.type}: {currentWeatherAlert.region}</span>
+            {/* Current Location Weather */}
+            {currentLocationWeather ? (
+              <div className="hidden md:flex items-center space-x-3">
+                <div className="flex items-center space-x-2 bg-blue-50 text-blue-700 px-3 py-1 rounded-lg">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <span className="text-sm font-medium">
+                    {locationName}: {Math.round(currentLocationWeather?.temperature || currentLocationWeather?.main?.temp || 0)}°C
+                  </span>
+                </div>
+              </div>
+            ) : weatherData && weatherData.length > 0 && (
+              <div className="hidden md:flex items-center space-x-3">
+                <div className="flex items-center space-x-2 bg-blue-50 text-blue-700 px-3 py-1 rounded-lg">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
+                  </svg>
+                  <span className="text-sm font-medium">
+                    {weatherData[0]?.city}: {Math.round(Number(weatherData[0]?.temperature) || 0)}°C
+                  </span>
+                </div>
               </div>
             )}
+            
             
             {/* Notifications */}
             <div className="relative">
@@ -72,13 +130,13 @@ export default function NavigationHeader({ onToggleSidebar }: NavigationHeaderPr
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
-                {alertsSummary?.unread > 0 && (
+                {(alertsSummary?.unread ?? 0) > 0 && (
                   <Badge 
                     variant="destructive" 
                     className="absolute -top-1 -right-1 h-5 w-5 text-xs flex items-center justify-center p-0"
                     data-testid="badge-notifications"
                   >
-                    {alertsSummary.unread}
+                    {alertsSummary?.unread ?? 0}
                   </Badge>
                 )}
               </button>

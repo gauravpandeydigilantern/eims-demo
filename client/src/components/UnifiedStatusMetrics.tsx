@@ -18,9 +18,9 @@ export default function UnifiedStatusMetrics({ data }: UnifiedStatusMetricsProps
         <CardTitle className="text-center text-xl font-bold">Device Health Status</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
           {/* UP Status */}
-          <div className="text-center bg-green-600 rounded-lg p-4">
+          {/* <div className="text-center bg-green-600 rounded-lg p-4">
             <div className="flex items-center justify-center mb-2">
               <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
                 <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
@@ -30,7 +30,7 @@ export default function UnifiedStatusMetrics({ data }: UnifiedStatusMetricsProps
             </div>
             <div className="text-2xl font-bold">{ACTIVE + STANDBY}/{Total}</div>
             <div className="text-sm font-medium mt-1">UP - {upPercentage}%</div>
-          </div>
+          </div> */}
 
           {/* ACTIVE Status */}
           <div className="text-center bg-blue-500 rounded-lg p-4">

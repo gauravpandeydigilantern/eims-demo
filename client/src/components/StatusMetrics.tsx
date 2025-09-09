@@ -106,7 +106,7 @@ export default function StatusMetrics() {
                     </div>
                   </div>
                   <div className="text-3xl font-bold text-green-600">{upDevices}/{totalDevices}</div>
-                  <div className="text-sm text-muted-foreground">UP - {upPercentage}%</div>
+                  <div className="text-sm text-muted-foreground">ACTIVE</div>
                 </div>
                 
                 {/* Live Status */}

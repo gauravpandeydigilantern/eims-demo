@@ -1,9 +1,11 @@
 import { useState, Suspense } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useDeviceStatusData } from "@/hooks/useDeviceStatusData";
 import NavigationHeader from "./NavigationHeader";
 import Sidebar from "./Sidebar";
 import StatusMetrics from "./StatusMetrics";
+import DeviceHealthStatus from "./DeviceHealthStatus";
 import DeviceMap from "./DeviceMap";
 import DeviceListTable from "./DeviceListTable";
 import AlertsPanel from "./AlertsPanel";
@@ -69,6 +71,8 @@ function DashboardLayout({ title, subtitle, badge, showLogout = false }: Dashboa
   const [activeTab, setActiveTab] = useState('overview');
   const isMobile = useIsMobile();
 
+  const { data: deviceStatusData, isLoading: deviceStatusLoading } = useDeviceStatusData();
+
   const logoutMutation = useMutation({
     mutationFn: async () => {
       return await apiRequest("/api/logout", "POST");
@@ -125,6 +129,15 @@ function DashboardLayout({ title, subtitle, badge, showLogout = false }: Dashboa
           <div className="p-6 space-y-6">
             <StatusMetrics />
             
+            <DeviceHealthStatus
+              activeDevices48H={deviceStatusData?.LastActive48H || 247}
+              activeDevices1W={deviceStatusData?.LastActive1W || 312}
+              activeDevices15D={deviceStatusData?.LastActive15D || 289}
+              timeDiff={deviceStatusData?.TimeDiff || 3}
+              loading={deviceStatusLoading}
+              lastUpdated={new Date().toISOString()}
+            />
+            
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
               <div className="xl:col-span-2 space-y-6">
                 <DeviceMap onDeviceSelect={setSelectedDeviceId} />
@@ -153,19 +166,19 @@ function DashboardLayout({ title, subtitle, badge, showLogout = false }: Dashboa
 
 // Mock data for charts
 const performanceData = [
-  { name: 'Jan', devices: 4800, uptime: 99.2, transactions: 2.1, efficiency: 94.5 },
-  { name: 'Feb', devices: 4850, uptime: 99.5, transactions: 2.3, efficiency: 95.2 },
-  { name: 'Mar', devices: 4920, uptime: 98.8, transactions: 2.8, efficiency: 96.1 },
-  { name: 'Apr', devices: 5000, uptime: 99.1, transactions: 3.2, efficiency: 96.8 },
-  { name: 'May', devices: 5080, uptime: 99.6, transactions: 3.5, efficiency: 97.1 },
-  { name: 'Jun', devices: 5120, uptime: 99.3, transactions: 3.8, efficiency: 97.5 }
+  { name: 'Jan', devices: 4800, efficiency: 94.5 },
+  { name: 'Feb', devices: 4850, efficiency: 95.2 },
+  { name: 'Mar', devices: 4920, efficiency: 96.1 },
+  { name: 'Apr', devices: 5000, efficiency: 96.8 },
+  { name: 'May', devices: 5080, efficiency: 97.1 },
+  { name: 'Jun', devices: 5120, efficiency: 97.5 }
 ];
 
 const regionData = [
-  { name: 'West', devices: 1845, uptime: 99.2, alerts: 12, color: '#8884d8' },
-  { name: 'North', devices: 1234, uptime: 98.8, alerts: 8, color: '#82ca9d' },
-  { name: 'South', devices: 1567, uptime: 99.5, alerts: 5, color: '#ffc658' },
-  { name: 'East', devices: 474, uptime: 97.9, alerts: 15, color: '#ff7300' }
+  { name: 'West', devices: 1845, alerts: 12, color: '#8884d8' },
+  { name: 'North', devices: 1234, alerts: 8, color: '#82ca9d' },
+  { name: 'South', devices: 1567, alerts: 5, color: '#ffc658' },
+  { name: 'East', devices: 474, alerts: 15, color: '#ff7300' }
 ];
 
 const vendorData = [
@@ -199,6 +212,8 @@ function NECGeneralDashboard() {
   const { data: deviceStats } = useQuery({
     queryKey: ['/api/devices/stats'],
   });
+
+  const { data: deviceStatusData, isLoading: deviceStatusLoading } = useDeviceStatusData();
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
@@ -361,7 +376,7 @@ function NECGeneralDashboard() {
                                 <Eye className="w-4 h-4" />
                               </Button>
                             </div>
-                            <div className="h-40 w-full border rounded-lg p-2 bg-muted/20">
+                            <div className="h-64 w-full border rounded-lg p-4 bg-muted/20">
                               <ResponsiveContainer width="100%" height="100%">
                                 <BarChart 
                                   data={[
@@ -370,7 +385,7 @@ function NECGeneralDashboard() {
                                     { region: 'BNG', performance: 98 },
                                     { region: 'CHN', performance: 96 }
                                   ]}
-                                  margin={{ top: 10, right: 10, left: 10, bottom: 10 }}
+                                  margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
                                 >
                                   <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
                                   <XAxis dataKey="region" tick={{ fontSize: 12 }} />
@@ -396,7 +411,7 @@ function NECGeneralDashboard() {
                                 <Activity className="w-4 h-4" />
                               </Button>
                             </div>
-                            <div className="h-40 w-full border rounded-lg p-2 bg-muted/20 flex items-center justify-center">
+                            <div className="h-64 w-full border rounded-lg p-4 bg-muted/20">
                               <ResponsiveContainer width="100%" height="100%">
                                 <PieChart>
                                   <Pie
@@ -407,9 +422,9 @@ function NECGeneralDashboard() {
                                       { name: 'Critical', value: 2 }
                                     ]}
                                     cx="50%"
-                                    cy="50%"
-                                    outerRadius={60}
-                                    innerRadius={30}
+                                    cy="45%"
+                                    outerRadius={70}
+                                    innerRadius={35}
                                     dataKey="value"
                                     label={({ name, percent }) => `${(percent * 100).toFixed(0)}%`}
                                   >
@@ -430,7 +445,7 @@ function NECGeneralDashboard() {
                                 </PieChart>
                               </ResponsiveContainer>
                             </div>
-                            <div className="grid grid-cols-2 gap-2 text-xs">
+                            <div className="grid grid-cols-2 gap-2 text-xs px-4">
                               <div className="flex items-center gap-2">
                                 <div className="w-3 h-3 rounded-full bg-green-500"></div>
                                 <span>Excellent (65%)</span>
@@ -815,6 +830,16 @@ function NECGeneralDashboard() {
                   </>
                 )}
 
+                {/* Device Health Status - Available to all roles */}
+                <DeviceHealthStatus
+                  activeDevices48H={deviceStatusData?.LastActive48H || 247}
+                  activeDevices1W={deviceStatusData?.LastActive1W || 312}
+                  activeDevices15D={deviceStatusData?.LastActive15D || 289}
+                  timeDiff={deviceStatusData?.TimeDiff || 3}
+                  loading={deviceStatusLoading}
+                  lastUpdated={new Date().toISOString()}
+                />
+
                 {user?.role === 'CLIENT' && (
                   <>
                     {/* CLIENT - Read-Only Professional Dashboard */}
@@ -980,19 +1005,19 @@ function NECGeneralDashboard() {
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                   <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border-green-200">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">System Uptime</CardTitle>
+                      <CardTitle className="text-sm font-medium">System Health</CardTitle>
                       <Activity className="h-4 w-4 text-green-600" />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-3xl font-bold text-green-600">99.7%</div>
+                      <div className="text-3xl font-bold text-green-600">98.5%</div>
                       <div className="mt-3">
-                        <Progress value={99.7} className="h-3" />
+                        <Progress value={98.5} className="h-3" />
                       </div>
                       <div className="flex items-center mt-2 text-xs">
                         <TrendingUp className="w-3 h-3 text-green-600 mr-1" />
-                        <span className="text-green-600">+0.4% vs last month</span>
+                        <span className="text-green-600">+2.1% vs last month</span>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1">Target: 99.5%</p>
+                      <p className="text-xs text-muted-foreground mt-1">Overall system performance</p>
                     </CardContent>
                   </Card>
 
@@ -1174,14 +1199,13 @@ function NECGeneralDashboard() {
                     <CardDescription>Device count, uptime, and transaction volume over time</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <ResponsiveContainer width="100%" height={350}>
+                    <ResponsiveContainer width="100%" height={300}>
                       <LineChart data={performanceData}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="name" />
                         <YAxis />
                         <Tooltip />
                         <Legend />
-                        <Line type="monotone" dataKey="uptime" stroke="#8884d8" strokeWidth={2} name="Uptime %" />
                         <Line type="monotone" dataKey="transactions" stroke="#82ca9d" strokeWidth={2} name="Transactions (M)" />
                         <Line type="monotone" dataKey="efficiency" stroke="#ffc658" strokeWidth={2} name="Efficiency %" />
                       </LineChart>
@@ -1228,7 +1252,7 @@ function NECGeneralDashboard() {
                       <CardTitle>Transaction Distribution</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <ResponsiveContainer width="100%" height={200}>
+                      <ResponsiveContainer width="100%" height={300}>
                         <AreaChart data={performanceData.slice(-6)}>
                           <CartesianGrid strokeDasharray="3 3" />
                           <XAxis dataKey="name" />
@@ -1255,7 +1279,7 @@ function NECGeneralDashboard() {
                       <CardDescription>Comprehensive performance metrics across all regions</CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <ResponsiveContainer width="100%" height={350}>
+                      <ResponsiveContainer width="100%" height={400}>
                         <ComposedChart data={performanceData}>
                           <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                           <XAxis 
@@ -1283,7 +1307,6 @@ function NECGeneralDashboard() {
                             }}
                           />
                           <Legend />
-                          <Bar yAxisId="left" dataKey="uptime" fill="#3b82f6" name="Uptime %" />
                           <Bar yAxisId="left" dataKey="efficiency" fill="#10b981" name="Efficiency %" />
                           <Line yAxisId="right" type="monotone" dataKey="transactions" stroke="#f59e0b" strokeWidth={3} name="Transactions (M)" />
                         </ComposedChart>
@@ -1291,7 +1314,7 @@ function NECGeneralDashboard() {
                     </CardContent>
                   </Card>
 
-                  <Card>
+                  <Card className="h-fit">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
                         <TrendingUp className="w-5 h-5" />
@@ -1299,27 +1322,27 @@ function NECGeneralDashboard() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="space-y-6">
+                      <div className="grid grid-cols-1 gap-4">
                         <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-lg">
-                          <div className="text-3xl font-bold text-blue-600">98.7%</div>
+                          <div className="text-2xl font-bold text-blue-600">98.7%</div>
                           <div className="text-sm text-muted-foreground">Overall Availability</div>
                           <div className="text-xs text-blue-600 mt-1">+2.3% vs target</div>
                         </div>
 
                         <div className="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-lg">
-                          <div className="text-3xl font-bold text-green-600">99.97%</div>
+                          <div className="text-2xl font-bold text-green-600">99.97%</div>
                           <div className="text-sm text-muted-foreground">Transaction Success</div>
                           <div className="text-xs text-green-600 mt-1">Above SLA</div>
                         </div>
 
                         <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-lg">
-                          <div className="text-3xl font-bold text-purple-600">142ms</div>
+                          <div className="text-2xl font-bold text-purple-600">142ms</div>
                           <div className="text-sm text-muted-foreground">Avg Response Time</div>
                           <div className="text-xs text-purple-600 mt-1">-18ms improved</div>
                         </div>
 
                         <div className="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-lg">
-                          <div className="text-3xl font-bold text-green-600">99.2%</div>
+                          <div className="text-2xl font-bold text-green-600">99.2%</div>
                           <div className="text-sm text-muted-foreground">System Uptime</div>
                           <div className="text-xs text-green-600 mt-1">+0.3% this month</div>
                         </div>
@@ -1436,7 +1459,7 @@ function NECGeneralDashboard() {
                           <XAxis dataKey="name" />
                           <YAxis />
                           <Tooltip />
-                          <Bar dataKey="uptime" fill="#82ca9d" name="Uptime %" />
+                          <Bar dataKey="devices" fill="#82ca9d" name="Devices" />
                         </BarChart>
                       </ResponsiveContainer>
                     </CardContent>
@@ -1820,13 +1843,12 @@ function NECGeneralDashboard() {
                           const doc = new jsPDF();
                           doc.text('Device Performance Report', 20, 20);
                           (doc as any).autoTable({
-                            head: [['Device ID', 'Name', 'Vendor', 'Status', 'Uptime %', 'Transactions', 'Health Score']],
+                            head: [['Device ID', 'Name', 'Vendor', 'Status', 'Transactions', 'Health Score']],
                             body: detailedReportData.map(device => [
                               device.id,
                               device.name,
                               device.vendor,
                               device.status,
-                              device.uptime.toFixed(1),
                               device.transactions.toLocaleString(),
                               device.efficiency.toFixed(1)
                             ]),
@@ -1888,7 +1910,6 @@ function NECGeneralDashboard() {
                           <YAxis dataKey="vendor" type="category" width={60} />
                           <Tooltip />
                           <Legend />
-                          <Bar dataKey="uptime" fill="#22c55e" name="Uptime %" />
                           <Bar dataKey="efficiency" fill="#3b82f6" name="Efficiency %" />
                           <Bar dataKey="satisfaction" fill="#f59e0b" name="Satisfaction %" />
                         </BarChart>
@@ -1928,7 +1949,6 @@ function NECGeneralDashboard() {
                               <th className="text-left p-3 font-medium">Vendor</th>
                               <th className="text-left p-3 font-medium">Region</th>
                               <th className="text-left p-3 font-medium">Status</th>
-                              <th className="text-right p-3 font-medium">Uptime %</th>
                               <th className="text-right p-3 font-medium">Transactions</th>
                               <th className="text-right p-3 font-medium">Efficiency %</th>
                               <th className="text-right p-3 font-medium">Health Score</th>
@@ -1951,13 +1971,6 @@ function NECGeneralDashboard() {
                                   >
                                     {device.status}
                                   </Badge>
-                                </td>
-                                <td className="p-3 text-right font-mono">
-                                  <div className="flex items-center justify-end gap-2">
-                                    <span className={device.uptime >= 98 ? 'text-green-600' : device.uptime >= 95 ? 'text-yellow-600' : 'text-red-600'}>
-                                      {device.uptime.toFixed(1)}%
-                                    </span>
-                                  </div>
                                 </td>
                                 <td className="p-3 text-right font-mono">{device.transactions.toLocaleString()}</td>
                                 <td className="p-3 text-right font-mono text-green-600">{device.efficiency.toFixed(1)}%</td>
@@ -2582,7 +2595,6 @@ function NECEngineerDashboard() {
                               <th className="text-right p-3 font-medium">Online</th>
                               <th className="text-right p-3 font-medium">Offline</th>
                               <th className="text-right p-3 font-medium">Performance Score</th>
-                              <th className="text-right p-3 font-medium">Uptime %</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -2603,11 +2615,6 @@ function NECEngineerDashboard() {
                                     <Progress value={location.performance} className="h-2 w-16" />
                                     <span className="font-mono text-xs">{location.performance.toFixed(1)}</span>
                                   </div>
-                                </td>
-                                <td className="p-3 text-right font-mono">
-                                  <span className={location.performance >= 98 ? 'text-green-600' : location.performance >= 95 ? 'text-yellow-600' : 'text-red-600'}>
-                                    {((location.online / location.devices) * 100).toFixed(1)}%
-                                  </span>
                                 </td>
                               </tr>
                             ))}
@@ -4332,7 +4339,6 @@ function ClientDashboard() {
                       <CSVLink
                         data={clientPerformanceData.map(data => ({
                           Month: data.month,
-                          'Uptime %': data.uptime,
                           'Transactions (M)': data.transactions,
                           'Efficiency (%)': data.efficiency
                         }))}
@@ -4350,12 +4356,12 @@ function ClientDashboard() {
                           doc.text('Business Performance Report', 20, 20);
                           doc.text('Executive Summary', 20, 35);
                           (doc as any).autoTable({
-                            head: [['Month', 'Efficiency %', 'Transactions (M)', 'Performance Score']],
+                            head: [['Month', 'Transactions (M)', 'Efficiency %', 'Performance Score']],
                             body: clientPerformanceData.map(data => [
                               data.month,
-                              data.uptime.toFixed(1) + '%',
                               data.transactions.toFixed(1) + 'M',
-                              data.efficiency.toFixed(1) + '%'
+                              data.efficiency.toFixed(1) + '%',
+                              data.performance.toFixed(1) + '%'
                             ]),
                             startY: 45,
                           });
@@ -4428,7 +4434,7 @@ function ClientDashboard() {
                         
                         <div className="space-y-2">
                           <div className="flex justify-between items-center">
-                            <span className="text-sm font-medium">System Uptime</span>
+                            <span className="text-sm font-medium">System Health</span>
                             <span className="text-2xl font-bold text-green-600">97.5%</span>
                           </div>
                           <Progress value={103} className="h-3" />
@@ -4514,9 +4520,9 @@ function ClientDashboard() {
                       </div>
                       
                       <div className="p-3 bg-purple-50 dark:bg-purple-950 rounded-lg">
-                        <div className="text-sm font-medium text-purple-800 dark:text-purple-200">Availability</div>
-                        <div className="text-lg font-bold text-purple-600">99.7%</div>
-                        <div className="text-xs text-purple-600">System availability</div>
+                        <div className="text-sm font-medium text-purple-800 dark:text-purple-200">Response Time</div>
+                        <div className="text-lg font-bold text-purple-600">1.2s</div>
+                        <div className="text-xs text-purple-600">Average response time</div>
                       </div>
                     </CardContent>
                   </Card>
@@ -4540,7 +4546,6 @@ function ClientDashboard() {
                               <th className="text-left p-3 font-medium">Period</th>
                               <th className="text-right p-3 font-medium">Efficiency %</th>
                               <th className="text-right p-3 font-medium">Transactions (M)</th>
-                              <th className="text-right p-3 font-medium">Efficiency (%)</th>
                               <th className="text-right p-3 font-medium">Growth Rate</th>
                               <th className="text-center p-3 font-medium">Performance</th>
                             </tr>
@@ -4548,12 +4553,12 @@ function ClientDashboard() {
                           <tbody>
                             {clientPerformanceData.map((data, index) => {
                               const prevData = index > 0 ? clientPerformanceData[index - 1] : null;
-                              const growthRate = prevData ? ((data.uptime - prevData.uptime) / prevData.uptime * 100) : 0;
+                              const growthRate = prevData ? ((data.efficiency - prevData.efficiency) / prevData.efficiency * 100) : 0;
                               
                               return (
                                 <tr key={data.month} className={index % 2 === 0 ? 'bg-background' : 'bg-muted/25'} data-testid={`row-business-${data.month}`}>
                                   <td className="p-3 font-medium">{data.month} 2024</td>
-                                  <td className="p-3 text-right font-mono text-green-600">{data.uptime.toFixed(1)}%</td>
+                                  <td className="p-3 text-right font-mono text-green-600">{data.efficiency.toFixed(1)}%</td>
                                   <td className="p-3 text-right font-mono">{data.transactions.toFixed(1)}M</td>
                                   <td className="p-3 text-right">
                                     <div className="flex items-center justify-end gap-2">
@@ -4594,20 +4599,20 @@ function ClientDashboard() {
                         <div key={index} className="p-4 border rounded-lg">
                           <div className="flex justify-between items-center mb-2">
                             <span className="font-medium">{service.service}</span>
-                            <Badge variant={service.uptime >= 99.5 ? "default" : "destructive"}>
-                              {service.uptime >= 99.5 ? "Meeting SLA" : "Below SLA"}
+                            <Badge variant={service.performance >= 95 ? "default" : "destructive"}>
+                              {service.performance >= 95 ? "Optimal" : "Needs Attention"}
                             </Badge>
                           </div>
                           
                           <div className="grid grid-cols-3 gap-4 text-sm">
                             <div>
-                              <div className="text-muted-foreground">Uptime</div>
-                              <div className="font-bold text-green-600">{service.uptime}%</div>
-                              <Progress value={service.uptime} className="h-1 mt-1" />
+                              <div className="text-muted-foreground">Performance</div>
+                              <div className="font-bold text-green-600">{service.performance}%</div>
+                              <Progress value={service.performance} className="h-1 mt-1" />
                             </div>
                             <div>
-                              <div className="text-muted-foreground">Performance</div>
-                              <div className="font-bold text-blue-600">{service.performance}%</div>
+                              <div className="text-muted-foreground">Efficiency</div>
+                              <div className="font-bold text-blue-600">{service.efficiency}%</div>
                               <Progress value={service.performance} className="h-1 mt-1" />
                             </div>
                             <div>

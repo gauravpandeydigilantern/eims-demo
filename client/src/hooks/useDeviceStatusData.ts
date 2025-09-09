@@ -48,7 +48,7 @@ export function useDeviceStatusData() {
     queryKey: ["/api/device-status"],
     queryFn: async (): Promise<DeviceStatusData> => {
       try {
-        const res = await fetch('/api/device-status');
+        const res = await fetch('/api/device-status?limit=1000');
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json = await res.json();
         return json.data as DeviceStatusData;

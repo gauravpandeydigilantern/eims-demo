@@ -184,15 +184,14 @@ export default function DeviceList() {
 
   const exportData = () => {
     const csvContent = [
-      ['Device ID', 'Type', 'Status', 'Region', 'Vendor', 'Toll Plaza', 'Uptime'],
+      ['Device ID', 'Type', 'Status', 'Region', 'Vendor', 'Toll Plaza'],
       ...filteredDevices.map((device: any) => [
         device.id,
         device.deviceType,
         device.status,
         device.region,
         device.vendor,
-        device.tollPlaza,
-        `${device.uptime?.toFixed(1) || 0}%`
+        device.tollPlaza
       ])
     ].map(row => row.join(',')).join('\n');
 
@@ -236,15 +235,7 @@ export default function DeviceList() {
           <div className="bg-card border-b border-border p-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => setLocation("/")}
-                  data-testid="button-back"
-                >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Dashboard
-                </Button>
+        
                 
                 <div>
                   <h1 className="text-2xl font-bold text-foreground">Device Management</h1>
@@ -362,10 +353,10 @@ export default function DeviceList() {
                       </div>
                     </div>
                     
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Uptime</span>
-                      <span className="font-bold text-green-600">{device.uptime?.toFixed(1) || 0}%</span>
-                    </div>
+                    {/* <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Status</span>
+                      <span className="font-bold text-green-600">{device.status}</span>
+                    </div> */}
                     
                     <Button 
                       variant="outline" 

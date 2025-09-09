@@ -150,31 +150,37 @@ export default function DeviceStatusDataView() {
           </CardContent>
         </Card>
 
-        {/* Status Distribution Pie Chart */}
+        {/* Status Distribution Bar Chart */}
         <Card>
           <CardHeader>
             <CardTitle>Overall Status Distribution</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={60}
-                  innerRadius={20}
-                  dataKey="value"
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  labelLine={false}
-                >
+              <BarChart data={pieData} layout="horizontal">
+                <XAxis type="number" />
+                <YAxis dataKey="name" type="category" width={80} />
+                <Tooltip formatter={(value) => [`${value} devices`]} />
+                <Bar dataKey="value" fill={(entry) => entry.color}>
                   {pieData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
-                </Pie>
-                <Tooltip formatter={(value, name) => [`${value} devices`, name]} />
-              </PieChart>
+                </Bar>
+              </BarChart>
             </ResponsiveContainer>
+            <div className="flex justify-center flex-wrap gap-4 mt-4">
+              {pieData.map((entry, index) => (
+                <div key={index} className="flex items-center space-x-2">
+                  <div 
+                    className="w-3 h-3 rounded-full" 
+                    style={{ backgroundColor: entry.color }}
+                  />
+                  <span className="text-sm text-muted-foreground">
+                    {entry.name}: {entry.value}
+                  </span>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       </div>

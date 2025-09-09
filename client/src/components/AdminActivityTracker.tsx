@@ -68,6 +68,8 @@ export default function AdminActivityTracker() {
   const [searchTerm, setSearchTerm] = useState("");
   const [timeFilter, setTimeFilter] = useState("24h");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const { data: loginActivities, isLoading: loginLoading, refetch: refetchLogins } = useQuery<LoginActivity[]>({
     queryKey: ["/api/admin/login-activities", { timeFilter, statusFilter }],
@@ -345,7 +347,9 @@ export default function AdminActivityTracker() {
                         </TableCell>
                       </TableRow>
                     ) : (
-                      filteredLoginActivities.map((activity) => (
+                      filteredLoginActivities
+                        .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                        .map((activity) => (
                         <TableRow key={activity.id} className="hover:bg-muted/50">
                           <TableCell>
                             <div className="space-y-1">
@@ -386,6 +390,35 @@ export default function AdminActivityTracker() {
                   </TableBody>
                 </Table>
               </div>
+              
+              {filteredLoginActivities.length > itemsPerPage && (
+                <div className="flex items-center justify-between mt-4">
+                  <div className="text-sm text-muted-foreground">
+                    Showing {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, filteredLoginActivities.length)} of {filteredLoginActivities.length}
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                      disabled={currentPage === 1}
+                    >
+                      Previous
+                    </Button>
+                    <span className="text-sm">
+                      Page {currentPage} of {Math.ceil(filteredLoginActivities.length / itemsPerPage)}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(Math.min(Math.ceil(filteredLoginActivities.length / itemsPerPage), currentPage + 1))}
+                      disabled={currentPage === Math.ceil(filteredLoginActivities.length / itemsPerPage)}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent value="actions" className="space-y-4">
